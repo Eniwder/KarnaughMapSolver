@@ -1,15 +1,10 @@
 <template>
-  <hot-table
-    :settings="hotSettings"
-    licenseKey="non-commercial-and-evaluation"
-    ref="hotTable"
-    :data="_tableData.body"
-  >
+  <hot-table :settings="hotSettings" licenseKey="non-commercial-and-evaluation" ref="hotTable" :data="tableData.body">
     <hot-column
-      v-for="(header, idx) in _tableData.headers"
+      v-for="(header, idx) in tableData.headers"
       :key="header"
       :title="header"
-      :read-only="idx < _tableData.meta.inputNum"
+      :read-only="idx < tableData.meta.inputNum"
     >
     </hot-column>
   </hot-table>
@@ -30,18 +25,22 @@ export default {
       body: [],
     },
   },
-  computed: {
-    _tableData() {
-      return this.tableData;
-    },
-  },
+  computed: {},
   data: function () {
-    const totalCol =
-      this.tableData.meta.inputNum + this.tableData.meta.outputNum;
+    const totalCol = this.tableData.meta.inputNum + this.tableData.meta.outputNum;
+    const self = this;
     return {
       hotSettings: {
         data: Object,
         colHeaders: Array,
+        afterChange(e) {
+          // 同時に編集したセルが配列で全て渡される
+          // [[y, x, old, new],...]
+          if (!e || typeof e !== 'object') return;
+          e.forEach((cell) => {
+            self.$emit('changeCell', cell);
+          });
+        },
         height: '100%',
         rowHeights: 24,
         cell: [
@@ -51,15 +50,12 @@ export default {
             readOnly: false,
             className: 'htCenter',
           })),
-          ...range(Math.pow(2, this.tableData.meta.inputNum) * totalCol).map(
-            (n) => ({
-              row: parseInt(n / totalCol) + 1,
-              col: n % totalCol,
-              className: 'htCenter',
-            })
-          ),
+          ...range(Math.pow(2, this.tableData.meta.inputNum) * totalCol).map((n) => ({
+            row: parseInt(n / totalCol) + 1,
+            col: n % totalCol,
+            className: 'htCenter',
+          })),
         ],
-        // header: [{ row: 0, col: 1, readOnly: true }],
         customBorders: [
           {
             range: {
@@ -109,23 +105,24 @@ export default {
     HotTable,
     HotColumn,
   },
-  methods: {},
+  methods: {
+    changeCell(e) {
+      console.log(e);
+    },
+  },
   mounted() {
     const th = this.$refs.hotTable.$el.querySelectorAll('th');
-    this.hotSettings.data = this._tableData.body;
     process.nextTick(() => {
-      th[
-        this.tableData.meta.inputNum * 2 + this.tableData.meta.outputNum
-      ].style.borderLeft = '2px solid lightgray';
+      th[this.tableData.meta.inputNum * 2 + this.tableData.meta.outputNum].style.borderLeft = '2px solid lightgray';
     });
   },
   watch: {
-    _tableData() {
-      this.hotSettings.data = this._tableData.body;
-      this.hotSettings.colHeaders = this._tableData.headers;
-      console.log(this.hotSettings.colHeaders);
-      this.$refs.hotTable.hotInstance.updateSettings(this.hotSettings);
-    },
+    // _tableData() {
+    //   this.hotSettings.data = this._tableData.body;
+    //   this.hotSettings.colHeaders = this._tableData.headers;
+    //   console.log(this.hotSettings.colHeaders);
+    //   this.$refs.hotTable.hotInstance.updateSettings(this.hotSettings);
+    // },
   },
 };
 </script>

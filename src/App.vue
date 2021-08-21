@@ -1,7 +1,7 @@
 <template>
-  <v-app id="app" data-app>
+  <v-app id="app">
     <template>
-      <v-card>
+      <v-card class="grey lighten-5">
         <v-toolbar color="indigo" dark flat>
           <v-app-bar-nav-icon></v-app-bar-nav-icon>
 
@@ -19,9 +19,7 @@
               <v-tabs-slider color="yellow"></v-tabs-slider>
               <v-tab v-for="tab in tabs" :key="tab.id" :data-id="tab.id">
                 {{ tab.name }}
-                <v-btn icon @click="tabDelete(tab.id)">
-                  <v-icon small>mdi-close</v-icon>
-                </v-btn>
+                <close-button :tab="tab" @confirmDelete="tabDelete(tab.id)"></close-button>
               </v-tab>
               <v-btn icon @click="addTab">
                 <v-icon>mdi-plus</v-icon>
@@ -35,43 +33,51 @@
           <v-tab-item v-for="tab in tabs" :key="tab.id">
             <v-container class="grey lighten-5 margin-initial">
               <v-row>
-                <v-col class="d-flex" cols="3">
+                <v-col class="d-flex" cols="2">
                   <v-text-field v-model="tab.name" class="shrink">
-                    <v-icon slot="prepend">mdi-pencil</v-icon>
+                    <!-- <v-icon slot="prepend">mdi-pencil</v-icon> -->
                   </v-text-field>
                 </v-col>
-                <v-col class="d-flex marginTopButton" cols="2">
-                  <v-btn color="primary" elevation="2">カルノー図作成</v-btn>
-                </v-col>
+                <!-- <v-col class="d-flex marginTopButton" cols="2">
+                  <v-btn color="primary" @click="tab.showKarnaugh = true"
+                    >カルノー図作成</v-btn
+                  >
+                </v-col> -->
               </v-row>
 
               <v-row>
                 <v-col class="d-flex" cols="2">
                   <v-select
                     :items="[2, 3, 4]"
-                    v-model="tab.sheets.meta.inputNum"
+                    :value="tab.sheets.meta.inputNum"
                     label="Inputs"
                     outlined
-                    @change="changeInOut(tab.id)"
+                    @change="changeInOut(tab.id, 'input', $event)"
                   ></v-select>
                 </v-col>
                 <v-col class="d-flex" cols="2">
                   <v-select
                     :items="[1, 2, 3]"
-                    v-model="tab.sheets.meta.outputNum"
+                    :value="tab.sheets.meta.outputNum"
                     label="Outputs"
                     outlined
-                    @change="changeInOut(tab.id)"
+                    @change="changeInOut(tab.id, 'output', $event)"
                   ></v-select>
                 </v-col>
               </v-row>
 
               <v-row>
-                <v-col cols="12" sm="6" class="sheets">
-                  <MySheets :tableData="tab.sheets" v-if="tab.show"></MySheets>
+                <v-col cols="12" sm="6" class="sheets" :style="{ height: tab.sheetHeight }">
+                  <transition name="toggle-fade">
+                    <MySheets
+                      :tableData="tab.sheets"
+                      v-if="tab.show"
+                      @changeCell="changeCell(tab.id, $event)"
+                    ></MySheets>
+                  </transition>
                 </v-col>
                 <v-col cols="12" sm="6">
-                  <!-- <MySheets class="pa-2"></MySheets> -->
+                  <KarnaughCtrl :tables="karnaughTable(tab)" ref="karnaughTable"></KarnaughCtrl>
                 </v-col>
               </v-row>
             </v-container>
@@ -84,25 +90,32 @@
 
 <script>
 import MySheets from './components/MySheets.vue';
+import KarnaughCtrl from './components/KarnaughCtrl.vue';
+import CloseButton from './components/CloseButtonWithDialog.vue';
 const range = (n) => [...Array(n).keys()];
+Array.prototype.zip = function (...args) {
+  const new_array = [];
+  for (let i = 0; i < this.length; i++) {
+    new_array.push([this[i], ...args.map((arg) => arg[i])]);
+  }
+  return new_array;
+};
+// TODO カルノー図作成ボタン動作
+// TODO メニューボタンからIm/Export
+// TOOD ハテナボタンで簡単に紹介
+// TODO 消したタブを戻せる
 
 export default {
   name: 'App',
-  components: { MySheets },
+  components: { MySheets, CloseButton, KarnaughCtrl },
   data() {
     return {
       projectName: 'Project1',
       tab: 0,
-      tabs: [
-        {
-          id: 1,
-          name: 'Work1',
-          show: true,
-          sheets: this.createTruthTable(4, 1),
-        },
-      ],
+      tabs: [],
     };
   },
+  computed: {},
   methods: {
     createTruthTable(inputNum, outputNum) {
       const ret = {
@@ -119,57 +132,118 @@ export default {
       ];
       ret.body = [
         [
-          ...range(inputNum).map((n) => String.fromCharCode(0x41 + n)),
-          ...range(outputNum).map((n) => String.fromCharCode(0x58 + n)),
+          ...range(inputNum).map((n) => String.fromCharCode(0x41 + n)), // a,b,c,...
+          ...range(outputNum).map((n) => String.fromCharCode(0x58 + n)), // x,y,z
         ],
         ...range(Math.pow(2, inputNum)).map((n) =>
           n
             .toString(2)
             .padStart(inputNum, 0)
-            .padEnd(inputNum + outputNum, 0)
+            .padEnd(inputNum + outputNum, 1)
             .split('')
         ),
       ];
 
       return ret;
     },
-    addTab() {
-      const maxId = this.tabs.reduce((acc, v) => (acc > v ? acc : v.id), -1);
-      this.tabs.push({
-        id: maxId + 1,
-        show: true,
-        name: `work${maxId + 1}`,
-        sheets: this.createTruthTable(4, 1),
-      });
-      const tabId = this.tabs.findIndex((_) => _.id === maxId + 1);
-      const self = this;
-      process.nextTick(() => {
-        self.tab = tabId;
+    karnaughTable(tab) {
+      return range(tab.sheets.meta.outputNum).map((idx) => {
+        const ret = {};
+        ret.inputNum = tab.sheets.meta.inputNum;
+        ret.headers = tab.sheets.body[0].slice(0, ret.inputNum);
+        ret.outName = tab.sheets.body[0][ret.inputNum + idx];
+        ret.body = tab.sheets.body.filter((_, idx) => idx !== 0);
+        ret.key = ret.outName + idx;
+        ret.outIdx = idx; // 本来はbodyを分けたいが多分高速化のため
+        return ret;
       });
     },
-    tabRename(id) {
-      const tabId = this.tabs.findIndex((_) => _.id === id);
+    addTab() {
+      const nextId = this.tabs.reduce((acc, v) => (acc > v ? acc : v.id), -1) + 1;
+      const tabId = this.tabs.length;
+      let watchCount = 0;
+      this.tabs.push({
+        id: nextId,
+        show: true,
+        name: `work${nextId + 1}`,
+        sheetHeight: 500 + 'px',
+        sheets: this.createTruthTable(4, 1),
+        modified: true, // TODO 編集検知
+        showKarnaugh: true, // TODO
+      });
+
+      process.nextTick(() => {
+        this.tab = tabId;
+      });
     },
     tabDelete(id) {
       const tabId = this.tabs.findIndex((_) => _.id === id);
       this.tabs.splice(tabId, 1);
     },
-    changeInOut(id) {
+    changeInOut(id, inout, event) {
       // 更新の仕方がわからなかったので仕方なく再描画
       const tabId = this.tabs.findIndex((_) => _.id === id);
+
+      const oldRows = this.tabs[tabId].sheets.body.length;
+      const oldCols = this.tabs[tabId].sheets.body[0].length;
+      const oldBody = this.tabs[tabId].sheets.body.slice();
+      const oldIn = this.tabs[tabId].sheets.meta.inputNum;
+      const oldOut = this.tabs[tabId].sheets.meta.outputNum;
+
+      if (inout === 'input') {
+        this.tabs[tabId].sheets.meta.inputNum = event;
+      } else {
+        this.tabs[tabId].sheets.meta.outputNum = event;
+      }
+
       this.tabs[tabId].sheets = this.createTruthTable(
         this.tabs[tabId].sheets.meta.inputNum,
         this.tabs[tabId].sheets.meta.outputNum
       );
+      // headerを引き継ぐ TODO 多分いらない
+      // for (let i = 0; i < this.tabs[tabId].sheets.meta.inputNum; i++) {
+      //   this.tabs[tabId].sheets.body[0][i] = oldBody[0][i];
+      // }
+
+      // 出力の数が変化している場合は過去の出力を引き継ぐ
+      if (oldOut !== this.tabs[tabId].sheets.meta.outputNum) {
+        const outIdx = this.tabs[tabId].sheets.meta.inputNum;
+        for (let i = outIdx; i < oldCols; i++) {
+          range(oldRows).forEach((row) => {
+            this.tabs[tabId].sheets.body[row][i] = oldBody[row][i];
+          });
+        }
+      }
+
+      const heightMap = ['0px', '0px', '180px', '280px', '500px'];
+      this.tabs[tabId].sheetHeight = heightMap[this.tabs[tabId].sheets.meta.inputNum];
       this.tabs[tabId].show = false;
       process.nextTick(() => (this.tabs[tabId].show = true));
     },
+    changeCell(id, e) {
+      if (!e) return;
+      const tabId = this.tabs.findIndex((_) => _.id === id);
+      const [y, x, old, v] = e;
+      let nextRow = [...this.tabs[tabId].sheets.body[y]];
+      nextRow[x] = (v && v[0]) || old;
+      this.tabs[tabId].sheets.body.splice(y, 1, nextRow);
+      // this.tabs[tabId].sheets.edit = true;
+      this.$refs.karnaughTable[0].changeCell(e[1] - this.tabs[tabId].sheets.meta.inputNum);
+      this.isChangeCell = true;
+    },
+  },
+  watch: {},
+  mounted() {
+    this.addTab();
   },
 };
 </script>
 
 <style>
 #app {
+}
+.theme--light.v-tabs-items {
+  background-color: inherit !important;
 }
 
 .margin-initial {
@@ -195,7 +269,9 @@ export default {
 }
 
 .sheets {
-  height: 800px;
+  /* height: 500px; */
+  max-height: 600px;
+  min-width: 400px;
 }
 .v-tab {
   text-transform: none !important;
@@ -203,11 +279,6 @@ export default {
 
 .v-menu__content {
   z-index: 161 !important;
-}
-
-.v-input__slot,
-.v-btn {
-  min-height: 48px !important;
 }
 
 .v-select {
@@ -223,5 +294,31 @@ export default {
 
 .d-flex.marginTopButton {
   margin-top: 24px !important;
+}
+
+.v-tabs-slider-wrapper + .v-tab {
+  margin-left: 0px !important;
+}
+
+div[role='tab'] div .v-btn--icon {
+  height: 24px !important;
+  width: 24px !important;
+  min-height: 24px !important;
+  margin-left: 24px !important;
+  margin-right: 12px !important;
+}
+
+.v-input__slot,
+.v-btn {
+  min-height: 48px !important;
+}
+
+.toggle-fade-enter-active,
+.toggle-fade-leave-active {
+  transition: opacity 0.6s ease;
+}
+.toggle-fade-enter,
+.toggle-fade-leave-to {
+  opacity: 0;
 }
 </style>
