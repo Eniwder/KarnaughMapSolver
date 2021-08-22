@@ -1,5 +1,10 @@
 <template>
-  <hot-table :settings="hotSettings" licenseKey="non-commercial-and-evaluation" ref="hotTable" :data="tableData.body">
+  <hot-table
+    :settings="hotSettings"
+    licenseKey="non-commercial-and-evaluation"
+    ref="hotTable"
+    :data="tableData.body"
+  >
     <hot-column
       v-for="(header, idx) in tableData.headers"
       :key="header"
@@ -113,7 +118,9 @@ export default {
   mounted() {
     const th = this.$refs.hotTable.$el.querySelectorAll('th');
     process.nextTick(() => {
-      th[this.tableData.meta.inputNum * 2 + this.tableData.meta.outputNum].style.borderLeft = '2px solid lightgray';
+      if (!th[this.tableData.meta.inputNum * 2 + this.tableData.meta.outputNum]) return;
+      th[this.tableData.meta.inputNum * 2 + this.tableData.meta.outputNum].style.borderLeft =
+        '2px solid lightgray';
     });
   },
   watch: {

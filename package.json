@@ -15,6 +15,7 @@
   "dependencies": {
     "@handsontable/vue": "^5.1.0",
     "core-js": "^3.6.5",
+    "file-saver": "^2.0.5",
     "handsontable": "^8.3.1",
     "vue": "^2.6.11",
     "vuetify": "^2.4.0"

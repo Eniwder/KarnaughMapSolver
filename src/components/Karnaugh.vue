@@ -103,6 +103,12 @@
       <ellipse v-for="p in ellipses" :key="p.key" v-bind="p" fill="none" stroke="black"></ellipse>
       <rect v-for="p in rects" :key="p.key" v-bind="p" fill="none" stroke="black"></rect>
     </svg>
+    <v-row class="fomulas" align="center">
+      <div id="fomula" v-html="mathjax"></div>
+      <v-btn class="ma-2" text icon @click="copy4word">
+        <v-icon>mdi-file-word-outline</v-icon>
+      </v-btn>
+    </v-row>
   </div>
 </template>
 
@@ -117,6 +123,7 @@ export default {
       headers: [],
       outName: String,
       outIdx: Number,
+      grp: [],
       body: [],
     },
   },
@@ -365,9 +372,85 @@ export default {
       });
       return ret;
     },
+    terms() {
+      const labels = this.group.map((_) =>
+        _.map((_) => {
+          const [x, y] = _;
+          const label = this.colHeader[x].v + this.rowHeader[y].v;
+          return label;
+        })
+      );
+      return labels
+        .map((l) => l.reduce((acc, v) => acc | (parseInt(l[0], 2) ^ parseInt(v, 2)), 0))
+        .map((_) => _.toString(2).padStart(this.colIn + this.rowIn, '0'))
+        .map((_, li) =>
+          _.split('')
+            .map((bit, idx) =>
+              bit === '0' ? { input: this.tableData.headers[idx], sign: labels[li][0][idx] } : null
+            )
+            .filter((_) => _)
+        );
+    },
+    mathjax() {
+      this.$nextTick(function () {
+        if (MathJax && MathJax.Hub) MathJax.Hub.Queue(['Typeset', MathJax.Hub, 'editor-output']);
+      });
+      const str =
+        this.terms.length === 0
+          ? '0'
+          : this.terms.length === 1 && this.terms[0].length === 0
+          ? '1'
+          : this.terms
+              .map((_) =>
+                _.length === 0
+                  ? '1'
+                  : _.map((_) => (_.sign === '1' ? _.input : `\\overline{${_.input}}`)).join(
+                      ` \\cdot `
+                    )
+              )
+              .join('+');
+
+      return `$$${this.tableData.outName} = ${str}$$`;
+    },
+    wordStr() {
+      return (
+        this.tableData.outName +
+        ' = ' +
+        (this.terms.length === 0
+          ? '0'
+          : this.terms.length === 1 && this.terms[0].length === 0
+          ? '1'
+          : this.terms
+              .map((term) => {
+                let buff = '';
+                let psign = '';
+                if (term.length === 0) buff = '1';
+                for (let i = 0; i < term.length; i++) {
+                  const pad =
+                    psign === '0' && term[i].sign === '0' ? '  ' : psign === '0' ? ' ' : '';
+                  const sign = term[i].sign === '1' ? '' : '¯';
+                  psign = term[i].sign;
+                  buff += pad + sign + term[i].input;
+                }
+                return buff;
+              })
+              .join('+'))
+      );
+    },
   },
   components: {},
   methods: {
+    import(obj) {
+      // importできないけどとりあえず残しておく
+      // this.group_ = obj.grp;
+    },
+    export() {
+      return { grp: this.group_ };
+    },
+    copy4word() {
+      navigator.clipboard.writeText(this.wordStr);
+      this.$emit('msg', 'Word用に数式をコピーしました。');
+    },
     select(ev) {
       const selectCell = (x, y) => {
         return [parseInt(x / this.colW), parseInt(y / this.rowH)];
@@ -455,7 +538,6 @@ export default {
         this.$emit('msg', '囲みました。');
       }
       this.deselection();
-      console.log(this.group_, this.group, this.groupStr);
     },
     deselection() {
       this.selects_ = [];
@@ -505,13 +587,14 @@ export default {
       const rh2idx = this.rowHeader.reduce(_grping, {});
       const acc2 = acc1.map((_) =>
         _.map((_) => {
-          const [xl, yl] = [_.slice(0, this.colIn), _.slice(this.rowIn)];
+          const [xl, yl] = [_.slice(0, this.colIn), _.slice(this.colIn)];
           return [ch2idx[xl], rh2idx[yl]];
         })
       );
+      console.log(ch2idx, rh2idx);
+
       const acc3 = acc2.filter((_) => this.isAllNeighbor(_));
       // 同じ要素を含んでいるものを削除。ドントケアは無視する。
-      // もっと良いアルゴリズムはありそう。
       const isSuperset = (set, subset) => {
         for (let elem of subset) {
           if (!set.has(elem)) return false;
@@ -539,6 +622,7 @@ export default {
       }
       const toOneList = (_) =>
         Array.from(_).filter((_) => this.tableMap[label(_.split(','))] === '1');
+
       const acc4 = acc3
         .map((_) => new Set(_.map((_) => _.join(','))))
         .filter((v, _, arr) => !arr.some((_) => isSuperset(_, v)))
@@ -548,49 +632,14 @@ export default {
               (_) => _.size >= v.size && isSuperset(new Set(toOneList(_)), new Set(toOneList(v)))
             )
         );
-      console.log(acc4);
 
-      // さらなる最適化
-      const mustReq = acc4.filter((a, ai, arr) => {
-        const narr = arr.filter((_) => !eqSet(a, _)).map((_) => new Set(toOneList(_)));
-        if (narr.length === 0) return true;
-        const naset = narr.reduce((acc, v) => union(acc, v));
-        const b = toOneList(a);
-        return !isSuperset(naset, new Set(b));
-      });
-      const tmp = new Set();
-      mustReq.forEach((_) => Array.from(_).forEach((_) => tmp.add(_)));
-      const acc5 = acc4
-        .sort((a, b) => b.size - a.size)
-        .filter((a, ai, arr) => {
-          const b = toOneList(a);
-          const bs = new Set(b);
-          const isss = !isSuperset(tmp, bs) && !eqSet(tmp, bs);
-          b.forEach((_) => tmp.add(_));
-          return isss;
-        })
-        .concat(mustReq);
-
-      console.log(acc5);
-
-      // さらなる最適化。自分の全てが他の要素でカバーされてる場合は削除
-      const acc6 = acc5.filter((a, ai, arr) => {
-        const narr = arr.filter((_) => !eqSet(a, _)).map((_) => new Set(toOneList(_)));
-        if (narr.length === 0) return true;
-        const naset = narr.reduce((acc, v) => union(acc, v));
-        const b = toOneList(a);
-        return !isSuperset(naset, new Set(b));
-      });
-
-      // const a = new Set(acc5.map((_) => Array.from(_).join('@')));
-      // const b = new Set(acc6.map((_) => Array.from(_).join('@')));
-      // const xxx = difference(a, b);
-      // const yyy = Array.from(xxx).map((_) => new Set(_.split('@')));
-      // console.log(yyy);
+      // ある程度絞った「囲み」の組み合わせを全て求めて、
+      // 出力が1となるセルを全て含む組み合わせを総当りで求める
+      // 優先順位：項の少なさ > 各項のシンプルさ
       const oneList = allLabels
         .filter((label) => this.tableMap[label].includes('1'))
         .map((_) => {
-          const [xl, yl] = [_.slice(0, this.colIn), _.slice(this.rowIn)];
+          const [xl, yl] = [_.slice(0, this.colIn), _.slice(this.colIn)];
           return [ch2idx[xl], rh2idx[yl]].join(',');
         });
       const oneSet = new Set(oneList);
@@ -610,13 +659,20 @@ export default {
         };
         return helper(1);
       };
-      const xxx = getGrpComb(acc4);
-      console.log(xxx);
-      xxx.sort((a, b) => a.length - b.length);
-      console.log(xxx[0]);
+      const acc5 = getGrpComb(acc4);
+      acc5.sort((a, b) => {
+        const first = a.length - b.length;
+        const second =
+          a.reduce((acc, v) => acc + v.size, 0) - b.reduce((acc, v) => acc + v.size, 0);
+        return first !== 0 ? first : second;
+      });
 
-      // 効率が悪いしややこしい
-      this.group_ = xxx[0].map((_) =>
+      // ややこしい
+      if (!acc5[0]) {
+        this.group_ = [];
+        return;
+      }
+      this.group_ = acc5[0].map((_) =>
         Array.from(_)
           .map((_) =>
             _.split(',')
@@ -631,12 +687,37 @@ export default {
       this.deselection();
       this.group_ = [];
     },
+    save() {
+      const svg = this.$refs.svgRoot;
+      const canvas = document.createElement('canvas');
+      canvas.width = svg.width.baseVal.value;
+      canvas.height = svg.height.baseVal.value;
+      const ctx = canvas.getContext('2d');
+      let image = new Image();
+
+      image.onload = () => {
+        ctx.drawImage(image, 0, 0, image.width, image.height);
+        let link = document.createElement('a');
+        link.href = canvas.toDataURL(); // 描画した画像のURIを返す data:image/png;base64
+        link.download = `${this.tableData.outName}.png`;
+        link.click();
+      };
+      image.onerror = (error) => {
+        console.log(error);
+      };
+      const svgData = new XMLSerializer().serializeToString(svg);
+      image.src =
+        'data:image/svg+xml;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    },
   },
-  mounted() {},
+  mounted() {
+    console.log('mounted' + this.tableData.outName);
+    this.group_ = this.tableData.grp || [];
+  },
   watch: {
-    // selects() {
-    //   console.log(this.selects);
-    // },
+    group_() {
+      this.$emit('grouped', [this.tableData.outIdx, this.group_]);
+    },
   },
 };
 </script>
@@ -647,6 +728,21 @@ export default {
 }
 svg {
   user-select: none;
+}
+.fomulas {
+  justify-content: center;
+  margin-left: -3px;
+  margin-bottom: -4px;
+  margin-right: 4px;
+}
+#fomula {
+  overflow-x: scroll;
+  font-size: 12px;
+  flex-basis: 70%;
+  padding-left: 8px;
+}
+.fomulas button {
+  flex-basis: 25%;
 }
 </style>
 
