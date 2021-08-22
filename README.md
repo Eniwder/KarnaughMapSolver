@@ -1,4 +1,5 @@
 # カルノー図の作成を補助するツール
+https://eniwder.github.io/KarnaughMaker/index.html
 
 ## 使い方
 説明しなくても大体分かると思います。
