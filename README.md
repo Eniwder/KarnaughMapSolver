@@ -1,24 +1,15 @@
-# hws
+# カルノー図の作成を補助するツール
 
-## Project setup
-```
-npm install
-```
+## 使い方
+説明しなくても大体分かると思います。
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+## 補足
+キーバインドは記載されてる以外にも使えます。
+* 囲む：E, Enter, Space
+* 選択解除：D, Delete
+* リセット：R
 
-### Compiles and minifies for production
-```
-npm run build
-```
+## バグ、要望など
+Issueに投げるか、PullRequestをくれるか、[Twitter](https://twitter.com/Eniel120)までお気軽にご連絡ください。
 
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+基本的にはフィードバックがあると嬉しいので善処します。
