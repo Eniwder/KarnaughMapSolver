@@ -11,6 +11,6 @@ https://eniwder.github.io/KarnaughMaker/index.html
 * リセット：R
 
 ## バグ、要望など
-Issueに投げるか、PullRequestをくれるか、[Twitter](https://twitter.com/Eniel120)か、[ブログのコメ欄](https://eniel.blog.fc2.com/blog-entry-605.html)までお気軽にご連絡ください。
+Issueに投げるか、PullRequestをくれるか、[Twitter](https://twitter.com/Eniel120)か、[ブログ](https://eniel.blog.fc2.com/blog-entry-605.html)のコメ欄(匿名可)までお気軽にご連絡ください。
 
 基本的にはフィードバックがあると嬉しいので善処します。
