@@ -413,6 +413,8 @@ export default {
       return `$$${this.tableData.outName} = ${str}$$`;
     },
     wordStr() {
+      //クリップボードに出力する文字列を生成する部分。
+      //LaTeXで出力できるようにしたい。
       return (
         this.tableData.outName +
         ' = ' +
