@@ -429,7 +429,7 @@ export default {
                 if (term.length === 0) buff = '1';
                 for (let i = 0; i < term.length; i++) {
                   const pad = 
-                    ? i == 0
+                    i == 0
                       ? ''
                       : ' \\cdot ';
                   //  psign === '0' && term[i].sign === '0' ? '' : psign === '0' ? '\\cdot' : '';
