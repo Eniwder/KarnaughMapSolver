@@ -419,9 +419,9 @@ export default {
         this.tableData.outName +
         ' = ' +
         (this.terms.length === 0
-          ? '0'
+          ? '0'//何も囲まれていない場合
           : this.terms.length === 1 && this.terms[0].length === 0
-          ? '1'
+          ? '1'//すべて囲まれている場合
           : this.terms
               .map((term) => {
                 let buff = '';
@@ -436,7 +436,7 @@ export default {
                 }
                 return buff;
               })
-              .join('+'))
+              .join(' + '))
       );
 
       /*
