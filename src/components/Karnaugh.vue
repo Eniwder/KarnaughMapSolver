@@ -430,7 +430,7 @@ export default {
                 for (let i = 0; i < term.length; i++) {
                   const pad =
                     psign === '0' && term[i].sign === '0' ? '  ' : psign === '0' ? ' ' : '';
-                  const sign = term[i].sign === '1' ? '' : '¯';
+                  const sign = term[i].sign === '1' ? '\\cdot' : '\\cdot\\bar';
                   psign = term[i].sign;
                   buff += pad + sign + term[i].input;
                 }
@@ -438,7 +438,80 @@ export default {
               })
               .join('+'))
       );
+
+      /*
+      memo
+
+        this.tableData.outName + ' = ';
+        if(this.terms.length === 0){
+          '0'
+        }else{
+          if(this.terms.length===1 && this.terms[0].length===0){
+            '1'
+          }else{
+            .map(
+              (term) => {
+                let buff = '';
+                let psign = '';
+                if (term.length === 0) buff = '1';
+                for (let i = 0; i < term.length; i++) {
+                  
+                  const pad = {
+                    if(psign === '0' && term[i].sign === '0'){
+                      '  '
+                    }else{
+                      if(psign === '0'){
+                        ' '
+                      }else{
+                        ''
+                      }
+                    }
+                  }
+
+                  const sign = {
+                    if(term[i].sign === '1'){ //否定なし
+                      ''
+                    }else{ //否定の場合
+                      '¯'
+                    }
+                  }
+
+                  psign = term[i].sign;
+                  buff += pad + sign + term[i].input;
+                }
+                return buff;
+              }
+            )
+            .join('+'))
+          }
+        }
+
+        return (
+          this.tableData.outName + ' = ' + 
+          (this.terms.length === 0
+            ? '0'
+            : this.terms.length === 1 && this.terms[0].length === 0
+            ? '1'
+            : this.terms
+                .map((term) => {
+                  let buff = '';
+                  let psign = '';
+                  if (term.length === 0) buff = '1';
+                  for (let i = 0; i < term.length; i++) {
+                    const pad =
+                      psign === '0' && term[i].sign === '0' ? '  ' : psign === '0' ? ' ' : '';
+                    const sign = term[i].sign === '1' ? '' : '¯';//否定かどうかを判定している。
+                    psign = term[i].sign;
+                    buff += pad + sign + term[i].input;
+                  }
+                  return buff;
+                })
+                .join('+'))
+        );
+      */
+
     },
+
   },
   components: {},
   methods: {
