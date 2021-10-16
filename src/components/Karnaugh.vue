@@ -428,10 +428,7 @@ export default {
                 let psign = '';
                 if (term.length === 0) buff = '1';
                 for (let i = 0; i < term.length; i++) {
-                  const pad = 
-                    i == 0
-                      ? ''
-                      : ' \\cdot ';
+                  const pad = i === 0 ? '' : ' \\cdot ';
                   //  psign === '0' && term[i].sign === '0' ? '' : psign === '0' ? '\\cdot' : '';
                   const sign = term[i].sign === '1' ? '' : '\\bar ';
                   psign = term[i].sign;
@@ -527,7 +524,7 @@ export default {
     },
     copy4word() {
       navigator.clipboard.writeText(this.wordStr);
-      this.$emit('msg', 'Word用に数式をコピーしました。');
+      this.$emit('msg', 'Word用に数式をLaTeXでコピーしました。');
     },
     select(ev) {
       const selectCell = (x, y) => {
