@@ -433,7 +433,7 @@ export default {
                   const sign = term[i].sign === '1' 
                     ? i == 0
                       ? ''
-                      : "\\cdot" ;
+                      : "\\cdot"
                     : '\\bar';
                   psign = term[i].sign;
                   buff += pad + sign + term[i].input;
