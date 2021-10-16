@@ -428,13 +428,12 @@ export default {
                 let psign = '';
                 if (term.length === 0) buff = '1';
                 for (let i = 0; i < term.length; i++) {
-                  const pad = '';
-                  //  psign === '0' && term[i].sign === '0' ? '' : psign === '0' ? '\\cdot' : '';
-                  const sign = term[i].sign === '1' 
+                  const pad = 
                     ? i == 0
                       ? ''
-                      : " \\cdot "
-                    : ' \\bar ';
+                      : ' \\cdot ';
+                  //  psign === '0' && term[i].sign === '0' ? '' : psign === '0' ? '\\cdot' : '';
+                  const sign = term[i].sign === '1' ? '' : '\\bar ';
                   psign = term[i].sign;
                   buff += pad + sign + term[i].input;
                 }
