@@ -430,7 +430,11 @@ export default {
                 for (let i = 0; i < term.length; i++) {
                   const pad =
                     psign === '0' && term[i].sign === '0' ? '\\cdot' : psign === '0' ? '\\cdot' : '';
-                  const sign = term[i].sign === '1' ? '' : '\\bar';
+                  const sign = term[i].sign === '1' 
+                    ? i == 0
+                      ? ''
+                      : "\\cdot" 
+                    : '\\bar';
                   psign = term[i].sign;
                   buff += pad + sign + term[i].input;
                 }
