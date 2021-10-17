@@ -413,30 +413,33 @@ export default {
       return `$$${this.tableData.outName} = ${str}$$`;
     },
     wordStr() {
+      //クリップボードに出力する文字列を生成する部分。
+      //LaTeXで出力できるようにしたい。たぶん完成。
       return (
         this.tableData.outName +
         ' = ' +
         (this.terms.length === 0
-          ? '0'
+          ? '0'//何も囲まれていない場合
           : this.terms.length === 1 && this.terms[0].length === 0
-          ? '1'
+          ? '1'//すべて囲まれている場合
           : this.terms
               .map((term) => {
                 let buff = '';
                 let psign = '';
                 if (term.length === 0) buff = '1';
                 for (let i = 0; i < term.length; i++) {
-                  const pad =
-                    psign === '0' && term[i].sign === '0' ? '  ' : psign === '0' ? ' ' : '';
-                  const sign = term[i].sign === '1' ? '' : '¯';
+                  const pad = i === 0 ? '' : ' \\cdot ';
+                  //  psign === '0' && term[i].sign === '0' ? '' : psign === '0' ? '\\cdot' : '';
+                  const sign = term[i].sign === '1' ? '' : '\\bar ';
                   psign = term[i].sign;
                   buff += pad + sign + term[i].input;
                 }
                 return buff;
               })
-              .join('+'))
+              .join(' + '))
       );
     },
+
   },
   components: {},
   methods: {
@@ -449,7 +452,7 @@ export default {
     },
     copy4word() {
       navigator.clipboard.writeText(this.wordStr);
-      this.$emit('msg', 'Word用に数式をコピーしました。');
+      this.$emit('msg', 'Word用に数式をLaTeXでコピーしました。');
     },
     select(ev) {
       const selectCell = (x, y) => {
