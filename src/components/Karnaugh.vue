@@ -413,15 +413,15 @@ export default {
       return `$$${this.tableData.outName} = ${str}$$`;
     },
     wordStr() {
-      //クリップボードに出力する文字列を生成する部分。
-      //LaTeXで出力できるようにしたい。たぶん完成。
+      // クリップボードに出力する文字列を生成する部分。
+      // LaTeX形式で出力
       return (
         this.tableData.outName +
         ' = ' +
         (this.terms.length === 0
-          ? '0'//何も囲まれていない場合
+          ? '0' //何も囲まれていない場合
           : this.terms.length === 1 && this.terms[0].length === 0
-          ? '1'//すべて囲まれている場合
+          ? '1' //すべて囲まれている場合
           : this.terms
               .map((term) => {
                 let buff = '';
@@ -439,7 +439,6 @@ export default {
               .join(' + '))
       );
     },
-
   },
   components: {},
   methods: {
@@ -452,7 +451,7 @@ export default {
     },
     copy4word() {
       navigator.clipboard.writeText(this.wordStr);
-      this.$emit('msg', 'Word用に数式をLaTeXでコピーしました。');
+      this.$emit('msg', '数式をLaTeX形式でコピーしました。');
     },
     select(ev) {
       const selectCell = (x, y) => {
