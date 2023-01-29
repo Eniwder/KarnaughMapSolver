@@ -7,6 +7,7 @@
         <v-tab-item v-for="table in tables" :key="table.key" ref="tabItem" eager>
           <Karnaugh
             :tableData="table"
+            :optView="optView"
             @msg="updateMsg($event)"
             @grouped="grouped($event)"
           ></Karnaugh>
@@ -42,6 +43,7 @@ export default {
   },
   props: {
     tables: {},
+    optView: {},
   },
   methods: {
     import(obj) {},

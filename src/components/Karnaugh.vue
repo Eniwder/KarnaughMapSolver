@@ -126,6 +126,10 @@ export default {
       grp: [],
       body: [],
     },
+    optView: {
+      AB_or_BA: Boolean,
+      A_BC_or_A_BC: Boolean,
+    },
   },
   data: function () {
     return {
@@ -223,10 +227,17 @@ export default {
       return this.height / (1 + this.rowIn * 2);
     },
     colIn() {
-      return parseInt(this.tableData.inputNum / 2);
+      return (
+        parseInt(this.tableData.inputNum / 2) +
+        (this.tableData.inputNum === 3 && this.optView.A_BC_or_A_BC ? 1 : 0)
+      );
     },
     rowIn() {
-      return this.tableData.inputNum - parseInt(this.tableData.inputNum / 2);
+      return (
+        this.tableData.inputNum -
+        parseInt(this.tableData.inputNum / 2) -
+        (this.tableData.inputNum === 3 && this.optView.A_BC_or_A_BC ? 1 : 0)
+      );
     },
     left() {
       return this.offset;
