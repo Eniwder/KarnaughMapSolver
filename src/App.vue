@@ -86,18 +86,7 @@
                     @change="changeInOut(tab.id, 'output', $event)"
                   ></v-select>
                 </v-col>
-
-                <v-col class="d-flex inout" cols="2">
-                  <v-btn
-                    outlined
-                    block
-                    color="indigo"
-                    :class="optView.AB_or_BA ? 'onBtn' : ''"
-                    @click="optView.AB_or_BA = !optView.AB_or_BA"
-                    >A/B ↔ B/A</v-btn
-                  >
-                </v-col>
-                <v-col class="d-flex inout" cols="2">
+                <!-- <v-col class="d-flex inout" cols="2">
                   <v-tooltip bottom open-delay="300" :disabled="tab.sheets.meta.inputNum === 3">
                     <template v-slot:activator="{ on, attrs }">
                       <span v-bind="attrs" v-on="on" style="width: 100%">
@@ -114,7 +103,7 @@
                     </template>
                     <span>入力が3変数の場合に押せるようになります。</span>
                   </v-tooltip>
-                </v-col>
+                </v-col> -->
               </v-row>
 
               <v-row>
@@ -130,7 +119,6 @@
                 <v-col cols="12" sm="6">
                   <KarnaughCtrl
                     :tables="karnaughTable"
-                    :optView="optView"
                     ref="karnaughTable"
                     @grouped="grouped($event)"
                   ></KarnaughCtrl>
@@ -171,10 +159,6 @@ export default {
       projectName: 'Project1',
       tab: 0,
       tabs: [],
-      optView: {
-        AB_or_BA: false,
-        A_BC_or_A_BC: false,
-      },
       optMenu: [
         { title: 'ファイルへ保存', icon: 'mdi-download', handlar: this.export },
         // { title: 'ファイルを読み込み', handlar: this.import },

@@ -6,13 +6,46 @@
         <v-tab v-for="tab in tabItems" :key="tab.key">{{ tab.name }}</v-tab>
         <v-tab-item v-for="table in tables" :key="table.key" ref="tabItem" eager>
           <Karnaugh
-            :tableData="table"
-            :optView="optView"
+            :_tableData="table"
+            :optView="optViewProps"
             @msg="updateMsg($event)"
             @grouped="grouped($event)"
           ></Karnaugh>
         </v-tab-item>
+        <v-menu bottom right class="optView" :close-on-content-click="false">
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn
+              icon
+              dark
+              v-bind="attrs"
+              v-on="on"
+              style="margin: auto 8px auto auto; width: 48px; height: 48px"
+            >
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-subheader dark>表示設定</v-subheader>
+            <v-list-item v-for="(item, index) in Object.values(optView)" :key="index" dark>
+              <v-tooltip bottom open-delay="600">
+                <template v-slot:activator="{ on, attrs }">
+                  <span v-bind="attrs" v-on="on">
+                    <v-switch
+                      v-model="item.value"
+                      inset
+                      :label="item.label"
+                      dark
+                      style="height: 48px"
+                    ></v-switch>
+                  </span>
+                </template>
+                <span>{{ item.disc }}</span>
+              </v-tooltip>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </v-tabs>
+
       <v-row align="center" class="msg">
         <v-text-field :placeholder="msg" filled disabled></v-text-field>
       </v-row>
@@ -39,11 +72,18 @@ export default {
       changed: [],
       selectedTab: 0,
       mathjax: '',
+      optView: {
+        AB_or_BA: { label: 'A/B ↔ B/A', value: false, disc: '入力の描画順序を入れ替えます。' },
+        A_BC_or_A_BC: {
+          label: 'A/BC ↔ AB/C',
+          value: false,
+          disc: '3変数の時に入力の区切り位置を変更します。',
+        },
+      },
     };
   },
   props: {
     tables: {},
-    optView: {},
   },
   methods: {
     import(obj) {},
@@ -110,9 +150,23 @@ export default {
     activeKarnaugh() {
       return this.$refs.tabItem[this.selectedTab].$children[0];
     },
+    optViewProps() {
+      return Object.entries(this.optView).reduce((acc, [k, v]) => {
+        acc[k] = v.value;
+        return acc;
+      }, {});
+    },
   },
   mounted() {
     this.selectedTab = 0;
+  },
+  watch: {
+    optView: {
+      deep: true,
+      handler() {
+        // this.reset();
+      },
+    },
   },
 };
 </script>

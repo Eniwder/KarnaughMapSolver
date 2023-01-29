@@ -118,7 +118,7 @@ const size = 360;
 
 export default {
   props: {
-    tableData: {
+    _tableData: {
       inputNum: Number,
       headers: [],
       outName: String,
@@ -154,6 +154,37 @@ export default {
     },
   },
   computed: {
+    tableData() {
+      // 入力ラベルの描画順序を変えない場合は何もしない
+      if (!this.optView.AB_or_BA) return this._tableData;
+      // 入力ラベルの描画順序を変える場合は中のデータ順序を入れ替える
+      // 描画ロジックは変更しない
+      function replaceTableData(td, idxs) {
+        const replaceArrElem = (arr, idxs) =>
+          arr.reduce((acc, v, idx) => {
+            acc.push(arr[idxs[idx]] || v);
+            return acc;
+          }, []);
+
+        const replaceArrsElem = (arrs, idxs) => arrs.map((arr) => replaceArrElem(arr, idxs));
+
+        td.headers = replaceArrElem(td.headers, idxs);
+        td.body = replaceArrsElem(td.body, idxs);
+        return td;
+      }
+      const indices =
+        this._tableData.inputNum === 2
+          ? [1, 0]
+          : this._tableData.inputNum === 3 && this.optView.A_BC_or_A_BC
+          ? [1, 2, 0]
+          : this._tableData.inputNum === 3 && !this.optView.A_BC_or_A_BC
+          ? [2, 0, 1]
+          : this._tableData.inputNum === 4
+          ? [2, 3, 0, 1]
+          : [0, 1, 2, 3];
+
+      return replaceTableData(Object.assign({}, this._tableData), indices);
+    },
     width() {
       return this.colIn * 180;
     },
@@ -400,6 +431,12 @@ export default {
               bit === '0' ? { input: this.tableData.headers[idx], sign: labels[li][0][idx] } : null
             )
             .filter((_) => _)
+        )
+        .map((_) =>
+          _.sort(
+            (a, b) =>
+              this._tableData.headers.indexOf(a.input) - this._tableData.headers.indexOf(b.input)
+          )
         );
     },
     mathjax() {
@@ -722,6 +759,85 @@ export default {
       image.src =
         'data:image/svg+xml;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(svgData)));
     },
+    regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
+      // オプションの適用順序によって変形順序が異なるので、
+      // 一度全ての変形を標準に戻してからオプションに従って変形をする。
+      // 綺麗な法則が分からなかったので愚直に変換をする…。
+
+      // まずは戻す
+      this.group_ = this.group_.map((grp) =>
+        grp
+          .split('@')
+          .map((xy) => {
+            const [x, y] = xy.split(',').map((_) => parseInt(_) - 1);
+            let dx = x,
+              dy = y;
+            if (abbaOld) {
+              if (this.tableData.inputNum === 2) {
+                dx = y;
+                dy = x;
+              } else if (this.tableData.inputNum === 3) {
+                if (a_bcOld) {
+                  const _dx = x < 2 ? 3 * y : 1 + y;
+                  const _dy = x % 3 === 0 ? 0 : 1;
+                  console.log(dx, dy);
+                  dx = _dx < 2 ? 0 : 1;
+                  dy = _dx % 3 === 0 ? _dy : 3 - _dy;
+                } else {
+                  dx = y < 2 ? 0 : 1;
+                  dy = y % 3 === 0 ? x : 3 - x;
+                }
+              } else if (this.tableData.inputNum === 4) {
+                dx = y;
+                dy = x;
+              }
+            } else if (!abbaOld && a_bcOld) {
+              if (this.tableData.inputNum === 3) {
+                dx = x < 2 ? 0 : 1;
+                dy = y === 0 ? (x % 3 === 0 ? 0 : 3) : x % 3 === 0 ? 1 : 2;
+              }
+            }
+            return `${dx + 1},${dy + 1}`;
+          })
+          .join('@')
+      );
+      // 次に変形
+      this.group_ = this.group_.map((grp) =>
+        grp
+          .split('@')
+          .map((xy) => {
+            const [x, y] = xy.split(',').map((_) => parseInt(_) - 1);
+            let dx = x,
+              dy = y;
+            if (abbaNew) {
+              if (this.tableData.inputNum === 2) {
+                dx = y;
+                dy = x;
+              } else if (this.tableData.inputNum === 3) {
+                if (a_bcNew) {
+                  const _dx = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
+                  const _dy = y === 0 || y === 3 ? 0 : 1;
+                  dx = _dx % 3 === 0 ? _dy : 3 - _dy;
+                  dy = _dx < 2 ? 0 : 1;
+                } else {
+                  dx = y % 3 === 0 ? 0 : 1;
+                  dy = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
+                }
+              } else if (this.tableData.inputNum === 4) {
+                dx = y;
+                dy = x;
+              }
+            } else if (!abbaNew && a_bcNew) {
+              if (this.tableData.inputNum === 3) {
+                dx = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
+                dy = y === 0 || y === 3 ? 0 : 1;
+              }
+            }
+            return `${dx + 1},${dy + 1}`;
+          })
+          .join('@')
+      );
+    },
   },
   mounted() {
     console.log('mounted' + this.tableData.outName);
@@ -731,14 +847,72 @@ export default {
     group_() {
       this.$emit('grouped', [this.tableData.outIdx, this.group_]);
     },
+    'optView.A_BC_or_A_BC'(newV, oldV) {
+      this.regroup4changeView(this.optView.AB_or_BA, this.optView.AB_or_BA, newV, oldV);
+      // if (this.tableData.inputNum !== 3) return;
+      // this.group_ = this.group_.map((grp) =>
+      //   grp
+      //     .split('@')
+      //     .map((xy) => {
+      //       const [x, y] = xy.split(',').map((_) => parseInt(_) - 1);
+      //       let dx, dy;
+      //       // 綺麗な法則が分からなかったので愚直に変換
+      //       if (newV) {
+      //         dx = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
+      //         dy = y === 0 || y === 3 ? 0 : 1;
+      //       } else {
+      //         dx = x < 2 ? 0 : 1;
+      //         dy = y === 0 ? (x % 3 === 0 ? 0 : 3) : x % 3 === 0 ? 1 : 2;
+      //       }
+      //       return `${dx + 1},${dy + 1}`;
+      //     })
+      //     .join('@')
+      // );
+    },
+    'optView.AB_or_BA'(newV, oldV) {
+      this.regroup4changeView(newV, oldV, this.optView.A_BC_or_A_BC, this.optView.A_BC_or_A_BC);
+      // this.group_ = this.group_.map((grp) =>
+      //   grp
+      //     .split('@')
+      //     .map((xy) => {
+      //       const [x, y] = xy.split(',').map((_) => parseInt(_) - 1);
+      //       let dx, dy;
+      //       // 綺麗な法則が分からなかったので愚直に変換
+      //       if (this.tableData.inputNum === 2) {
+      //         dx = y;
+      //         dy = x;
+      //       } else if (this.tableData.inputNum === 3) {
+      //         if (this.optView.A_BC_or_A_BC) {
+      //           if (newV) {
+      //             dx = x % 3 === 0 ? y : 3 - y;
+      //             dy = x < 2 ? 0 : 1;
+      //           } else {
+      //             dx = x < 2 ? 3 * y : 1 + y;
+      //             dy = x % 3 === 0 ? 0 : 1;
+      //           }
+      //         } else {
+      //           if (newV) {
+      //             dx = y % 3 === 0 ? 0 : 1;
+      //             dy = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
+      //           } else {
+      //             dx = y < 2 ? 0 : 1;
+      //             dy = y % 3 === 0 ? x : 3 - x;
+      //           }
+      //         }
+      //       }
+      //       return `${dx + 1},${dy + 1}`;
+      //     })
+      //     .join('@')
+      // );
+    },
   },
 };
 </script>
 
 <style scoped>
-.karnaugh {
-  /* border: 1px black solid; */
-}
+/* .karnaugh {
+  border: 1px black solid; 
+} */
 svg {
   user-select: none;
 }
