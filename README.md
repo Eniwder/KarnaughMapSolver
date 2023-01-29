@@ -10,6 +10,8 @@ https://eniwder.github.io/KarnaughMaker/index.html
 * 選択解除：D, Delete
 * リセット：R
 
+カルノー図の右上にある「︙」ボタンから表示を少し変えれるようになりました。
+
 ## バグ、要望など
 Issueに投げるか、PullRequestをくれるか、[Twitter](https://twitter.com/Eniel120)か、[ブログ](https://eniel.blog.fc2.com/blog-entry-605.html)のコメ欄(匿名可)までお気軽にご連絡ください。
 
