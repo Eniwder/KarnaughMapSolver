@@ -317,7 +317,8 @@ export default {
       );
       // headerを引き継ぐ
       for (let i = 0; i < this.tabs[tabId].sheets.meta.inputNum; i++) {
-        this.tabs[tabId].sheets.body[0][i] = oldBody[0][i];
+        if (i < oldIn) this.tabs[tabId].sheets.body[0][i] = oldBody[0][i];
+        else this.tabs[tabId].sheets.body[0][i] = String.fromCharCode(0x41 + i);
       }
 
       // 出力の数が変化している場合は過去の出力を引き継ぐ

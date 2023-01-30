@@ -760,78 +760,49 @@ export default {
         'data:image/svg+xml;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(svgData)));
     },
     regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
-      // オプションの適用順序によって変形順序が異なるので、
+      // 2n変数の場合はxとyを入れ替えるだけ
+      if (this.tableData.inputNum % 2 === 0) {
+        if (abbaNew !== abbaOld) {
+          this.group_ = this.group.map((grp) => grp.map(([x, y]) => `${y + 1},${x + 1}`).join('@'));
+        }
+        return;
+      }
+      // 3変数の場合オプションの適用順序によって変形順序が異なるので、
       // 一度全ての変形を標準に戻してからオプションに従って変形をする。
-      // 綺麗な法則が分からなかったので愚直に変換をする。数式から戻すのが理想か？
+      // 綺麗な法則が分からなかったので愚直に変換をする。数式から戻すのが理想か…？
 
       // まずは戻す
-      this.group_ = this.group_.map((grp) =>
+      this.group_ = this.group.map((grp) =>
         grp
-          .split('@')
-          .map((xy) => {
-            const [x, y] = xy.split(',').map((_) => parseInt(_) - 1);
-            let dx = x,
-              dy = y;
+          .map(([x, y]) => {
+            let [dx, dy] = [x, y];
             if (abbaOld) {
-              if (this.tableData.inputNum === 2) {
-                dx = y;
-                dy = x;
-              } else if (this.tableData.inputNum === 3) {
-                if (a_bcOld) {
-                  const _dx = x < 2 ? 3 * y : 1 + y;
-                  const _dy = x % 3 === 0 ? 0 : 1;
-                  console.log(dx, dy);
-                  dx = _dx < 2 ? 0 : 1;
-                  dy = _dx % 3 === 0 ? _dy : 3 - _dy;
-                } else {
-                  dx = y < 2 ? 0 : 1;
-                  dy = y % 3 === 0 ? x : 3 - x;
-                }
-              } else if (this.tableData.inputNum === 4) {
-                dx = y;
-                dy = x;
-              }
-            } else if (!abbaOld && a_bcOld) {
-              if (this.tableData.inputNum === 3) {
-                dx = x < 2 ? 0 : 1;
-                dy = y === 0 ? (x % 3 === 0 ? 0 : 3) : x % 3 === 0 ? 1 : 2;
-              }
+              const _dx = x < 2 ? 3 * y : 1 + y;
+              const _dy = x % 3 === 0 ? 0 : 1;
+              [x, y] = a_bcOld ? [_dx, _dy] : [y, x];
+            }
+            if (abbaOld || a_bcOld) {
+              dx = x < 2 ? 0 : 1;
+              dy = x % 3 === 0 ? y : 3 - y;
             }
             return `${dx + 1},${dy + 1}`;
           })
           .join('@')
       );
       // 次に変形
-      this.group_ = this.group_.map((grp) =>
+      this.group_ = this.group.map((grp) =>
         grp
-          .split('@')
-          .map((xy) => {
-            const [x, y] = xy.split(',').map((_) => parseInt(_) - 1);
-            let dx = x,
-              dy = y;
-            if (abbaNew) {
-              if (this.tableData.inputNum === 2) {
-                dx = y;
-                dy = x;
-              } else if (this.tableData.inputNum === 3) {
-                if (a_bcNew) {
-                  const _dx = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
-                  const _dy = y === 0 || y === 3 ? 0 : 1;
-                  dx = _dx % 3 === 0 ? _dy : 3 - _dy;
-                  dy = _dx < 2 ? 0 : 1;
-                } else {
-                  dx = y % 3 === 0 ? 0 : 1;
-                  dy = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
-                }
-              } else if (this.tableData.inputNum === 4) {
-                dx = y;
-                dy = x;
-              }
-            } else if (!abbaNew && a_bcNew) {
-              if (this.tableData.inputNum === 3) {
-                dx = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
-                dy = y === 0 || y === 3 ? 0 : 1;
-              }
+          .map(([x, y]) => {
+            let [dx, dy] = [x, y];
+            if (abbaNew || a_bcNew) {
+              dx = y % 3 === 0 ? 0 : 1;
+              dy = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
+            }
+            if (a_bcNew) {
+              const [_dx, _dy] = [dy, dx];
+              dx = _dx % 3 === 0 ? _dy : 3 - _dy;
+              dy = _dx < 2 ? 0 : 1;
+              [dx, dy] = abbaNew ? [dx, dy] : [_dx, _dy];
             }
             return `${dx + 1},${dy + 1}`;
           })
