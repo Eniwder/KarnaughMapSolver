@@ -762,7 +762,7 @@ export default {
     regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
       // オプションの適用順序によって変形順序が異なるので、
       // 一度全ての変形を標準に戻してからオプションに従って変形をする。
-      // 綺麗な法則が分からなかったので愚直に変換をする…。
+      // 綺麗な法則が分からなかったので愚直に変換をする。数式から戻すのが理想か？
 
       // まずは戻す
       this.group_ = this.group_.map((grp) =>
@@ -849,61 +849,9 @@ export default {
     },
     'optView.A_BC_or_A_BC'(newV, oldV) {
       this.regroup4changeView(this.optView.AB_or_BA, this.optView.AB_or_BA, newV, oldV);
-      // if (this.tableData.inputNum !== 3) return;
-      // this.group_ = this.group_.map((grp) =>
-      //   grp
-      //     .split('@')
-      //     .map((xy) => {
-      //       const [x, y] = xy.split(',').map((_) => parseInt(_) - 1);
-      //       let dx, dy;
-      //       // 綺麗な法則が分からなかったので愚直に変換
-      //       if (newV) {
-      //         dx = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
-      //         dy = y === 0 || y === 3 ? 0 : 1;
-      //       } else {
-      //         dx = x < 2 ? 0 : 1;
-      //         dy = y === 0 ? (x % 3 === 0 ? 0 : 3) : x % 3 === 0 ? 1 : 2;
-      //       }
-      //       return `${dx + 1},${dy + 1}`;
-      //     })
-      //     .join('@')
-      // );
     },
     'optView.AB_or_BA'(newV, oldV) {
       this.regroup4changeView(newV, oldV, this.optView.A_BC_or_A_BC, this.optView.A_BC_or_A_BC);
-      // this.group_ = this.group_.map((grp) =>
-      //   grp
-      //     .split('@')
-      //     .map((xy) => {
-      //       const [x, y] = xy.split(',').map((_) => parseInt(_) - 1);
-      //       let dx, dy;
-      //       // 綺麗な法則が分からなかったので愚直に変換
-      //       if (this.tableData.inputNum === 2) {
-      //         dx = y;
-      //         dy = x;
-      //       } else if (this.tableData.inputNum === 3) {
-      //         if (this.optView.A_BC_or_A_BC) {
-      //           if (newV) {
-      //             dx = x % 3 === 0 ? y : 3 - y;
-      //             dy = x < 2 ? 0 : 1;
-      //           } else {
-      //             dx = x < 2 ? 3 * y : 1 + y;
-      //             dy = x % 3 === 0 ? 0 : 1;
-      //           }
-      //         } else {
-      //           if (newV) {
-      //             dx = y % 3 === 0 ? 0 : 1;
-      //             dy = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
-      //           } else {
-      //             dx = y < 2 ? 0 : 1;
-      //             dy = y % 3 === 0 ? x : 3 - x;
-      //           }
-      //         }
-      //       }
-      //       return `${dx + 1},${dy + 1}`;
-      //     })
-      //     .join('@')
-      // );
     },
   },
 };
