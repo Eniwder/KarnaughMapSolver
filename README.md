@@ -1,10 +1,10 @@
-[![GitHub Pages](https://github.com/Eniwder/KarnaughMaker/actions/workflows/gh-pages.yml/badge.svg)](https://github.com/Eniwder/KarnaughMaker/actions/workflows/gh-pages.yml)
+[![GitHub Pages](https://github.com/Eniwder/KarnaughMapSolver/actions/workflows/gh-pages.yml/badge.svg)](https://github.com/Eniwder/KarnaughMapSolver/actions/workflows/gh-pages.yml)
 ![](https://img.shields.io/badge/vue-2.x-brightgreen.svg)
 
-[README in English](https://github.com/Eniwder/KarnaughMaker/blob/main/README-en.md)
+[README in English](https://github.com/Eniwder/KarnaughMapSolver/blob/main/README-en.md)
 
 # カルノー図の作成を補助するツール
-https://eniwder.github.io/KarnaughMaker/index.html
+https://eniwder.github.io/KarnaughMapSolver/index.html
 
 ## 使い方
 説明しなくても大体分かると思います。

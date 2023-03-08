@@ -32,7 +32,7 @@
           </v-toolbar-title>
           <v-spacer></v-spacer>
           <a
-            href="https://github.com/Eniwder/KarnaughMaker"
+            href="https://github.com/Eniwder/KarnaughMapSolver"
             target="_blank"
             style="color: transparent"
           >

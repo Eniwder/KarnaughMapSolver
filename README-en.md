@@ -1,8 +1,8 @@
-[![GitHub Pages](https://github.com/Eniwder/KarnaughMaker/actions/workflows/gh-pages.yml/badge.svg)](https://github.com/Eniwder/KarnaughMaker/actions/workflows/gh-pages.yml)
+[![GitHub Pages](https://github.com/Eniwder/KarnaughMapSolver/actions/workflows/gh-pages.yml/badge.svg)](https://github.com/Eniwder/KarnaughMapSolver/actions/workflows/gh-pages.yml)
 ![](https://img.shields.io/badge/vue-2.x-brightgreen.svg)
 
 # Karnaugh Map Solver
-https://eniwder.github.io/KarnaughMaker/index.html
+https://eniwder.github.io/KarnaughMapSolver/index.html
 
 ## How to use
 It is intuitive to use.
