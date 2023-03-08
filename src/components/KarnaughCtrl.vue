@@ -25,7 +25,7 @@
             </v-btn>
           </template>
           <v-list>
-            <v-subheader dark>表示設定</v-subheader>
+            <v-subheader dark>{{ $t('表示設定') }}</v-subheader>
             <v-list-item v-for="(item, index) in Object.values(optView)" :key="index" dark>
               <v-tooltip bottom open-delay="600">
                 <template v-slot:activator="{ on, attrs }">
@@ -42,6 +42,15 @@
                 <span>{{ item.disc }}</span>
               </v-tooltip>
             </v-list-item>
+            <v-subheader dark>{{ $t('図の出力') }}</v-subheader>
+            <v-list-item>
+              <v-icon>mdi-download</v-icon>
+              <v-list-item-title @click="save('png')">{{ $t('PNG保存') }} </v-list-item-title>
+            </v-list-item>
+            <v-list-item>
+              <v-icon>mdi-download</v-icon>
+              <v-list-item-title @click="save('svg')">{{ $t('SVG保存') }} </v-list-item-title>
+            </v-list-item>
           </v-list>
         </v-menu>
       </v-tabs>
@@ -50,13 +59,18 @@
         <v-text-field :placeholder="msg" filled disabled></v-text-field>
       </v-row>
       <v-row align="center" class="controlButton">
-        <v-btn elevation="2" color="indigo lighten-4" @click="grouping">囲む/解除[E]</v-btn>
-        <v-btn elevation="2" color="indigo lighten-4" @click="deselection">選択解除[D]</v-btn>
-        <v-btn elevation="2" color="indigo lighten-4" @click="reset(null)">リセット[R]</v-btn>
-      </v-row>
-      <v-row align="center" class="controlButton">
-        <v-btn elevation="2" color="indigo lighten-4" @click="autoGrouping">自動で囲む</v-btn>
-        <v-btn elevation="2" color="indigo lighten-4" @click="save">図を保存</v-btn>
+        <v-btn elevation="2" color="indigo lighten-4" @click="grouping"
+          >{{ $t('囲む解除') }}
+        </v-btn>
+        <v-btn elevation="2" color="indigo lighten-4" @click="deselection">{{
+          $t('選択解除')
+        }}</v-btn>
+        <v-btn elevation="2" color="indigo lighten-4" @click="reset(null)">{{
+          $t('リセット')
+        }}</v-btn>
+        <v-btn elevation="2" color="indigo lighten-4" @click="autoGrouping">{{
+          $t('自動で囲む')
+        }}</v-btn>
       </v-row>
     </v-card>
   </div>
@@ -68,16 +82,20 @@ export default {
   components: { Karnaugh },
   data: function () {
     return {
-      msg: 'まずは真理値表を編集。0,1以外はドントケア扱い。',
+      msg: this.$t('まずは真理値表を編集。0,1以外はドントケア扱い。'),
       changed: [],
       selectedTab: 0,
       mathjax: '',
       optView: {
-        AB_or_BA: { label: 'A/B ↔ B/A', value: false, disc: '入力の描画順序を入れ替えます。' },
+        AB_or_BA: {
+          label: 'A/B ↔ B/A',
+          value: false,
+          disc: this.$t('入力の描画順序を入れ替えます。'),
+        },
         A_BC_or_A_BC: {
           label: 'A/BC ↔ AB/C',
           value: false,
-          disc: '3変数の時に入力の区切り位置を変更します。',
+          disc: this.$t('3変数の時に入力の区切り位置を変更します。'),
         },
       },
     };
@@ -112,17 +130,20 @@ export default {
     autoGrouping() {
       this.reset();
       this.activeKarnaugh.autoGrouping();
-      this.msg = `囲みました。自分でも確認してね。`;
+      this.msg = this.$t(`囲みました。自分でも確認してね。`);
     },
-    save() {
-      this.activeKarnaugh.save();
-      this.msg = `画像をダウンロードしました。`;
+    save(ext) {
+      this.activeKarnaugh.save(ext);
+      this.msg = this.$t(`図をダウンロードしました。`);
     },
     reset(idx) {
       idx = idx ?? this.selectedTab;
       if (this.$refs.tabItem[idx]) this.$refs.tabItem[idx].$children[0].reset();
       if (idx >= 0 && idx < this.$refs.tabItem.length) {
-        this.msg = `タブ[${this.tabItems[idx].name}]の内容をリセットしました。`;
+        this.msg = this.$t(`タブ@@@の内容をリセットしました。`).replace(
+          '@@@',
+          this.tabItems[idx].name
+        );
       }
     },
     updateMsg(msg) {
@@ -134,7 +155,7 @@ export default {
     changeCell(outIdx) {
       this.reset(outIdx);
       if (!this.changed[outIdx]) {
-        this.msg = 'カルノー図の「1」をクリックして「囲む」を選択。';
+        this.msg = this.$t('カルノー図の「1」をクリックして「囲む」を選択。');
       } else {
       }
     },

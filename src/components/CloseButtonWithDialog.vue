@@ -10,16 +10,16 @@
       </template>
       <v-card>
         <v-card-title class="headline">
-          タブを消しても大丈夫ですか？
+          {{ $t('タブを消しても大丈夫ですか？') }}
         </v-card-title>
-        <v-card-text>編集したデータは失われます。</v-card-text>
+        <v-card-text>{{ $t('編集したデータは失われます。') }}</v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="green darken-1" text @click="dialog = false">
-            消さない
+            {{ $t('消さない') }}
           </v-btn>
           <v-btn color="green darken-1" text @click="$emit('confirmDelete')">
-            消す
+            {{ $t('消す') }}
           </v-btn>
         </v-card-actions>
       </v-card>

@@ -499,7 +499,7 @@ export default {
     },
     copy4word() {
       navigator.clipboard.writeText(this.wordStr);
-      this.$emit('msg', '数式をLaTeX形式でコピーしました。');
+      this.$emit('msg', this.$t('数式をLaTeX形式でコピーしました。'));
     },
     select(ev) {
       const selectCell = (x, y) => {
@@ -562,30 +562,30 @@ export default {
       });
       const vs = labels.map((_) => this.tableMap[_]);
       if (vs.includes('0')) {
-        this.$emit('msg', '0を含んで囲むことはできません。');
+        this.$emit('msg', this.$t('0を含んで囲むことはできません。'));
         return;
       }
       const len = vs.length;
       if (len === 0) {
-        this.$emit('msg', '1つ以上選択してから囲みましょう。');
+        this.$emit('msg', this.$t('1つ以上選択してから囲みましょう。'));
         return;
       }
       if ((len & (len - 1)) !== 0) {
-        this.$emit('msg', '囲む数は2のべき乗にしましょう。');
+        this.$emit('msg', this.$t('囲む数は2のべき乗にしましょう。'));
         return;
       }
       if (!this.isAllNeighbor(this.selects)) {
-        this.$emit('msg', '隣接したセルを選びましょう。');
+        this.$emit('msg', this.$t('隣接したセルを選びましょう。'));
         return;
       }
       const selectsStr = this.selects_.sort().join('@');
       const hasIdx = this.group_.indexOf(selectsStr);
       if (hasIdx >= 0) {
         this.group_.splice(hasIdx, 1);
-        this.$emit('msg', '囲みを解除しました。');
+        this.$emit('msg', this.$t('囲みを解除しました。'));
       } else {
         this.group_.push(selectsStr);
-        this.$emit('msg', '囲みました。');
+        this.$emit('msg', this.$t('囲みました。'));
       }
       this.deselection();
     },
@@ -737,27 +737,40 @@ export default {
       this.deselection();
       this.group_ = [];
     },
-    save() {
+    save(ext) {
       const svg = this.$refs.svgRoot;
-      const canvas = document.createElement('canvas');
-      canvas.width = svg.width.baseVal.value;
-      canvas.height = svg.height.baseVal.value;
-      const ctx = canvas.getContext('2d');
-      let image = new Image();
+      if (ext === 'png') {
+        const canvas = document.createElement('canvas');
+        canvas.width = svg.width.baseVal.value;
+        canvas.height = svg.height.baseVal.value;
+        const ctx = canvas.getContext('2d');
+        let image = new Image();
 
-      image.onload = () => {
-        ctx.drawImage(image, 0, 0, image.width, image.height);
-        let link = document.createElement('a');
-        link.href = canvas.toDataURL(); // 描画した画像のURIを返す data:image/png;base64
-        link.download = `${this.tableData.outName}.png`;
-        link.click();
-      };
-      image.onerror = (error) => {
-        console.log(error);
-      };
-      const svgData = new XMLSerializer().serializeToString(svg);
-      image.src =
-        'data:image/svg+xml;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+        image.onload = () => {
+          ctx.drawImage(image, 0, 0, image.width, image.height);
+          let link = document.createElement('a');
+          link.href = canvas.toDataURL(); // 描画した画像のURIを返す data:image/png;base64
+          link.download = `${this.tableData.outName}.png`;
+          link.click();
+        };
+        image.onerror = (error) => {
+          console.log(error);
+        };
+        const svgData = new XMLSerializer().serializeToString(svg);
+        image.src =
+          'data:image/svg+xml;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+      } else if (ext === 'svg') {
+        const svgText = new XMLSerializer().serializeToString(svg);
+        const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+        const a = document.createElement('a');
+        a.href = svgUrl;
+        a.download = `${this.tableData.outName}.svg`;
+        a.click();
+        URL.revokeObjectURL(svgUrl);
+      } else {
+        console.log(`非対応の拡張子：${ext}`);
+      }
     },
     regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
       // 2n変数の場合はxとyを入れ替えるだけ

@@ -12,17 +12,15 @@
             <v-list>
               <v-list-item v-for="(item, index) in optMenu" :key="index">
                 <v-icon>{{ item.icon }}</v-icon>
-                <v-list-item-title @click="item.handlar">{{ item.title }} </v-list-item-title>
+                <v-list-item-title @click="item.handlar">{{ $t(item.title) }} </v-list-item-title>
               </v-list-item>
               <v-list-item>
                 <label class="import">
                   <v-list-item-title>
                     <v-icon>mdi-upload</v-icon>
-                    <input
-                      type="file"
-                      accept="application/json"
-                      @change="loadFile($event)"
-                    />ファイルを読み込み
+                    <input type="file" accept="application/json" @change="loadFile($event)" />{{
+                      $t('ファイルを読み込み')
+                    }}
                   </v-list-item-title>
                 </label>
               </v-list-item>
@@ -86,24 +84,6 @@
                     @change="changeInOut(tab.id, 'output', $event)"
                   ></v-select>
                 </v-col>
-                <!-- <v-col class="d-flex inout" cols="2">
-                  <v-tooltip bottom open-delay="300" :disabled="tab.sheets.meta.inputNum === 3">
-                    <template v-slot:activator="{ on, attrs }">
-                      <span v-bind="attrs" v-on="on" style="width: 100%">
-                        <v-btn
-                          outlined
-                          block
-                          color="indigo"
-                          :disabled="tab.sheets.meta.inputNum !== 3"
-                          :class="optView.A_BC_or_A_BC ? 'onBtn' : ''"
-                          @click="optView.A_BC_or_A_BC = !optView.A_BC_or_A_BC"
-                          >A/BC ↔ AB/C</v-btn
-                        >
-                      </span>
-                    </template>
-                    <span>入力が3変数の場合に押せるようになります。</span>
-                  </v-tooltip>
-                </v-col> -->
               </v-row>
 
               <v-row>
@@ -149,7 +129,6 @@ Array.prototype.zip = function (...args) {
 // TODO 消したタブを戻せる
 // TODO github flow (electron build)
 // TODO 図サイズ変更
-// TODO 図のデザイン変更機能
 
 export default {
   name: 'App',
@@ -245,8 +224,8 @@ export default {
         },
       };
       ret.headers = [
-        ...range(inputNum).map((n) => `入力${n + 1}`),
-        ...range(outputNum).map((n) => `出力${n + 1}`),
+        ...range(inputNum).map((n) => `${this.$t('入力')}${n + 1}`),
+        ...range(outputNum).map((n) => `${this.$t('出力')}${n + 1}`),
       ];
       ret.body = [
         [
@@ -366,9 +345,12 @@ export default {
   },
   watch: {},
   mounted() {
+    if (!window.navigator.language.startsWith('ja')) {
+      this.$i18n.locale = 'en';
+    }
     this.addTab();
     this.tabs.forEach((_) => (_.modified = false));
-    window.addEventListener('beforeunload', this.confirmSave); // TODO デプロイ時コメントアウト解除
+    window.addEventListener('beforeunload', this.confirmSave);
   },
 };
 </script>
