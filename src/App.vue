@@ -3,7 +3,7 @@
     <template>
       <v-card class="grey lighten-5" flat>
         <v-toolbar color="indigo" dark flat>
-          <v-menu offset-y class="optMenu">
+          <v-menu offset-y class="optMenu" :close-on-content-click="false">
             <template v-slot:activator="{ on, attrs }">
               <v-btn icon dark v-bind="attrs" v-on="on">
                 <v-icon>mdi-dots-vertical</v-icon>
@@ -23,6 +23,12 @@
                     }}
                   </v-list-item-title>
                 </label>
+              </v-list-item>
+              <v-list-item>
+                <v-radio-group v-model="opts.lang" row v-on:change="launageSetup">
+                  <v-radio color="white" label="日本語" value="ja"></v-radio>
+                  <v-radio color="white" label="English" value="en"></v-radio>
+                </v-radio-group>
               </v-list-item>
             </v-list>
           </v-menu>
@@ -142,6 +148,7 @@ export default {
         { title: 'ファイルへ保存', icon: 'mdi-download', handlar: this.export },
         // { title: 'ファイルを読み込み', handlar: this.import },
       ],
+      opts: { lang: String },
     };
   },
   computed: {
@@ -178,6 +185,12 @@ export default {
         type: 'application/json',
       });
       saveAs(blob, `${this.projectName}.json`);
+    },
+    launageSetup() {
+      this.$i18n.locale = this.opts.lang;
+      this.tabs.forEach((tab, idx) => {
+        this.$refs.karnaughTable[idx].updateMsg(this.$t('表示言語を変更しました。'));
+      });
     },
     // 名前をimportにするとHTMLの方で呼び出す時にバグる
     async loadFile(event) {
@@ -448,6 +461,10 @@ div[role='menu'] .v-list-item__title {
   cursor: pointer;
 }
 div[role='menu'] .v-list i {
+  margin-right: 8px;
+  color: #e1e1e1;
+}
+div[role='menu'] .v-list label {
   margin-right: 8px;
   color: #e1e1e1;
 }
