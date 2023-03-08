@@ -8,10 +8,38 @@
       ref="svgRoot"
     >
       <!-- 外枠 -->
-      <line :x1="left" :y1="top" :x2="right" :y2="top" stroke="black" stroke-width="2"></line>
-      <line :x1="left" :y1="top" :x2="left" :y2="bottom" stroke="black" stroke-width="2"></line>
-      <line :x1="left" :y1="bottom" :x2="right" :y2="bottom" stroke="black" stroke-width="2"></line>
-      <line :x1="right" :y1="top" :x2="right" :y2="bottom" stroke="black" stroke-width="2"></line>
+      <line
+        :x1="left - 1"
+        :y1="top"
+        :x2="right + 1"
+        :y2="top"
+        stroke="black"
+        stroke-width="2"
+      ></line>
+      <line
+        :x1="left"
+        :y1="top - 1"
+        :x2="left"
+        :y2="bottom + 1"
+        stroke="black"
+        stroke-width="2"
+      ></line>
+      <line
+        :x1="left - 1"
+        :y1="bottom"
+        :x2="right + 1"
+        :y2="bottom"
+        stroke="black"
+        stroke-width="2"
+      ></line>
+      <line
+        :x1="right"
+        :y1="top - 1"
+        :x2="right"
+        :y2="bottom + 1"
+        stroke="black"
+        stroke-width="2"
+      ></line>
       <!-- grid col -->
       <line
         v-for="col in 2 * colIn"
