@@ -148,7 +148,7 @@ export default {
         { title: 'ファイルへ保存', icon: 'mdi-download', handlar: this.export },
         // { title: 'ファイルを読み込み', handlar: this.import },
       ],
-      opts: { lang: String },
+      opts: { lang: window.navigator.language.startsWith('ja') ? 'ja' : 'en' },
     };
   },
   computed: {
@@ -358,9 +358,7 @@ export default {
   },
   watch: {},
   mounted() {
-    if (!window.navigator.language.startsWith('ja')) {
-      this.$i18n.locale = 'en';
-    }
+    this.launageSetup();
     this.addTab();
     this.tabs.forEach((_) => (_.modified = false));
     window.addEventListener('beforeunload', this.confirmSave);
