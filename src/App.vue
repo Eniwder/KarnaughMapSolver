@@ -66,13 +66,13 @@
           <v-tab-item v-for="tab in tabs" :key="tab.id">
             <v-container class="grey lighten-5 margin-initial">
               <v-row>
-                <v-col class="d-flex" cols="2">
+                <v-col class="d-flex" cols="3">
                   <v-text-field v-model="tab.name" class="shrink">
                     <!-- <v-icon slot="prepend">mdi-pencil</v-icon> -->
                   </v-text-field>
                 </v-col>
 
-                <v-col class="d-flex inout" cols="2">
+                <v-col class="d-flex inout" cols="3">
                   <v-select
                     :items="[2, 3, 4]"
                     :value="tab.sheets.meta.inputNum"
@@ -81,7 +81,7 @@
                     @change="changeInOut(tab.id, 'input', $event)"
                   ></v-select>
                 </v-col>
-                <v-col class="d-flex inout" cols="2">
+                <v-col class="d-flex inout" cols="3">
                   <v-select
                     :items="[1, 2, 3]"
                     :value="tab.sheets.meta.outputNum"
@@ -102,7 +102,7 @@
                     ></MySheets>
                   </transition>
                 </v-col>
-                <v-col cols="12" sm="6">
+                <v-col cols="12" sm="6" class="karnaughTable">
                   <KarnaughCtrl
                     :tables="karnaughTable"
                     ref="karnaughTable"
@@ -474,5 +474,13 @@ div[role='menu'] .v-list label {
 
 .onBtn::before {
   opacity: 0.2;
+}
+
+@media (max-width: 450px) {
+  .karnaughTable {
+    transform: scale(0.8);
+    margin-left: -30px;
+    margin-top: -80px;
+  }
 }
 </style>
