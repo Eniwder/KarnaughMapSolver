@@ -689,13 +689,14 @@ export default {
     },
     save(ext) {
       const svg = this.$refs.svgRoot;
+      const svgString = new XMLSerializer().serializeToString(svg);
       if (ext === 'png') {
         const canvas = document.createElement('canvas');
         canvas.width = svg.width.baseVal.value;
         canvas.height = svg.height.baseVal.value;
         const ctx = canvas.getContext('2d');
-        let image = new Image();
 
+        let image = new Image();
         image.onload = () => {
           ctx.drawImage(image, 0, 0, image.width, image.height);
           let link = document.createElement('a');
@@ -706,12 +707,9 @@ export default {
         image.onerror = (error) => {
           console.log(error);
         };
-        const svgData = new XMLSerializer().serializeToString(svg);
-        image.src =
-          'data:image/svg+xml;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+        image.src = 'data:image/svg+xml;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(svgString)));
       } else if (ext === 'svg') {
-        const svgText = new XMLSerializer().serializeToString(svg);
-        const svgBlob = new Blob([svgText], { type: 'image/svg+xml' });
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
         const svgUrl = URL.createObjectURL(svgBlob);
         const a = document.createElement('a');
         a.href = svgUrl;
