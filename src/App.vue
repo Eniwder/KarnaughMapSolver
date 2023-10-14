@@ -357,7 +357,9 @@ export default {
     }
   },
   mounted() {
-    Object.keys(this.opts).forEach((k => this.opts[k] = localStorage.getItem(k)))
+    Object.keys(this.opts).forEach((k => {
+      if (localStorage.getItem(k)) this.opts[k] = localStorage.getItem(k);
+    }))
     this.launageSetup();
     this.addTab();
     this.tabs.forEach((_) => (_.modified = false));
