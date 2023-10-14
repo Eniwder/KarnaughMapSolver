@@ -487,6 +487,11 @@ div[role='menu'] .v-list label {
     transform: scale(0.8);
     margin-left: -30px;
     margin-top: -80px;
+
   }
+}
+
+.karnaughTable {
+  max-width: none;
 }
 </style>

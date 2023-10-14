@@ -1,129 +1,44 @@
 <template>
   <div class="karnaugh">
-    <svg
-      viewbox="0 0 300 300"
-      :width="width + offset * 2"
-      :height="height + offset * 2"
-      @click="select($event)"
-      ref="svgRoot"
-    >
+    <svg viewbox="0 0 300 300" :width="width + offset * 2 + inNameOffset" :height="height + offset * 2"
+      @click="select($event)" ref="svgRoot">
       <!-- 外枠 -->
-      <line
-        :x1="left - 1"
-        :y1="top"
-        :x2="right + 1"
-        :y2="top"
-        stroke="black"
-        stroke-width="2"
-      ></line>
-      <line
-        :x1="left"
-        :y1="top - 1"
-        :x2="left"
-        :y2="bottom + 1"
-        stroke="black"
-        stroke-width="2"
-      ></line>
-      <line
-        :x1="left - 1"
-        :y1="bottom"
-        :x2="right + 1"
-        :y2="bottom"
-        stroke="black"
-        stroke-width="2"
-      ></line>
-      <line
-        :x1="right"
-        :y1="top - 1"
-        :x2="right"
-        :y2="bottom + 1"
-        stroke="black"
-        stroke-width="2"
-      ></line>
+      <line :x1="left - 1" :y1="top" :x2="right + 1 + inNameOffset" :y2="top" stroke="black" stroke-width="2"></line>
+      <line :x1="left" :y1="top - 1" :x2="left" :y2="bottom + 1" stroke="black" stroke-width="2"></line>
+      <line :x1="left - 1" :y1="bottom" :x2="right + 1 + inNameOffset" :y2="bottom" stroke="black" stroke-width="2">
+      </line>
+      <line :x1="right + inNameOffset" :y1="top - 1" :x2="right + inNameOffset" :y2="bottom + 1" stroke="black"
+        stroke-width="2"></line>
       <!-- grid col -->
-      <line
-        v-for="col in 2 * colIn"
-        :key="'col' + col"
-        :x1="col * colW + left"
-        :y1="top"
-        :x2="col * colW + left"
-        :y2="bottom"
-        stroke="black"
-      ></line>
+      <line v-for="col in 2 * colIn" :key="'col' + col" :x1="col * colW + left + inNameOffset" :y1="top"
+        :x2="col * colW + left + inNameOffset" :y2="bottom" stroke="black"></line>
       <!-- grid row -->
-      <line
-        v-for="row in 2 * rowIn"
-        :key="'row' + row"
-        :x1="left"
-        :y1="row * rowH + top"
-        :x2="right"
-        :y2="row * rowH + top"
-        stroke="black"
-      ></line>
+      <line v-for="row in 2 * rowIn" :key="'row' + row" :x1="left" :y1="row * rowH + top" :x2="right + inNameOffset"
+        :y2="row * rowH + top" stroke="black"></line>
       <!-- separate input -->
-      <line :x1="left" :y1="top" :x2="left + colW" :y2="top + rowH" stroke="black"></line>
+      <line :x1="left" :y1="top" :x2="left + colW + inNameOffset" :y2="top + rowH" stroke="black"></line>
       <!-- col header -->
-      <text
-        v-for="chl in colHeaderLabel"
-        :key="chl.key"
-        :x="chl.x"
-        :y="chl.y"
-        :font-size="fontLabelSize"
-        :font-family="fontInFam"
-        text-anchor="middle"
-        dominant-baseline="central"
-      >
-        {{ chl.v }}
+      <text :x="colHeaderLabel.x" :y="colHeaderLabel.y" :font-size="fontLabelSize" :font-family="fontInFam"
+        text-anchor="middle" dominant-baseline="central">
+        {{ colHeaderLabel.v }}
       </text>
-      <text
-        v-for="ch in colHeader"
-        :key="ch.key"
-        :x="ch.x"
-        :y="ch.y"
-        :font-size="fontInSize"
-        :font-family="fontInFam"
-        text-anchor="middle"
-        dominant-baseline="central"
-      >
+      <text v-for="ch in colHeader" :key="ch.key" :x="ch.x + inNameOffset" :y="ch.y" :font-size="fontInSize"
+        :font-family="fontInFam" text-anchor="middle" dominant-baseline="central">
         {{ ch.v }}
       </text>
       <!-- row header -->
-      <text
-        v-for="rhl in rowHeaderLabel"
-        :key="rhl.key"
-        :x="rhl.x"
-        :y="rhl.y"
-        :font-size="fontLabelSize"
-        :font-family="fontInFam"
-        text-anchor="middle"
-        dominant-baseline="central"
-      >
-        {{ rhl.v }}
+      <text :x="rowHeaderLabel.x" :y="rowHeaderLabel.y" :font-size="fontLabelSize" :font-family="fontInFam"
+        text-anchor="middle" dominant-baseline="central">
+        {{ rowHeaderLabel.v }}
       </text>
-      <text
-        v-for="rh in rowHeader"
-        :key="rh.key"
-        :x="rh.x"
-        :y="rh.y"
-        :font-size="fontInSize"
-        :font-family="fontInFam"
-        text-anchor="middle"
-        dominant-baseline="central"
-      >
+      <text v-for="rh in rowHeader" :key="rh.key" :x="rh.x + inNameOffset / 2" :y="rh.y" :font-size="fontInSize"
+        :font-family="fontInFam" text-anchor="middle" dominant-baseline="central">
         {{ rh.v }}
       </text>
       <!-- table body -->
-      <text
-        v-for="tb in tableBody"
-        :key="tb.key"
-        :x="tb.x"
-        :y="tb.y"
-        :font-size="fontBodySize"
-        :font-family="fontBodyFam"
-        text-anchor="middle"
-        dominant-baseline="central"
-        :fill="colors[parseInt(tb.x / colW) - 1][parseInt(tb.y / rowH) - 1]"
-      >
+      <text v-for="tb in tableBody" :key="tb.key" :x="tb.x + inNameOffset" :y="tb.y" :font-size="fontBodySize"
+        :font-family="fontBodyFam" text-anchor="middle" dominant-baseline="central"
+        :fill="colors[parseInt(tb.x / colW) - 1][parseInt(tb.y / rowH) - 1]">
         {{ tb.v }}
       </text>
       <path v-for="p in arcs" :d="p | svgArc" :key="p.key" fill="none" stroke="black"></path>
@@ -204,12 +119,12 @@ export default {
         this._tableData.inputNum === 2
           ? [1, 0]
           : this._tableData.inputNum === 3 && this.optView.A_BC_or_A_BC
-          ? [1, 2, 0]
-          : this._tableData.inputNum === 3 && !this.optView.A_BC_or_A_BC
-          ? [2, 0, 1]
-          : this._tableData.inputNum === 4
-          ? [2, 3, 0, 1]
-          : [0, 1, 2, 3];
+            ? [1, 2, 0]
+            : this._tableData.inputNum === 3 && !this.optView.A_BC_or_A_BC
+              ? [2, 0, 1]
+              : this._tableData.inputNum === 4
+                ? [2, 3, 0, 1]
+                : [0, 1, 2, 3];
 
       return replaceTableData(Object.assign({}, this._tableData), indices);
     },
@@ -220,12 +135,12 @@ export default {
       return this.rowIn * 180;
     },
     colHeaderLabel() {
-      return range(this.colIn).map((i) => ({
-        v: this.tableData.headers[i],
-        key: `chl${i}`,
-        x: this.left + (this.colW / 4) * i + this.colW / 1.8 + (this.colW / 6) * (this.colIn % 2),
-        y: this.top + this.rowH / 4,
-      }));
+      const colLabel = range(this.colIn).map((i) => this.tableData.headers[i]).join(' ');
+      return {
+        v: colLabel,
+        x: this.left + this.inNameOffset / 2 + (this.colW / 4) * 3 - 4 + this.inNameOffset / 5,
+        y: this.top + this.rowH / 4
+      };
     },
     colHeader() {
       return range(this.colIn * 2).map((i) => ({
@@ -236,16 +151,12 @@ export default {
       }));
     },
     rowHeaderLabel() {
-      return range(this.rowIn).map((i) => ({
-        v: this.tableData.headers[i + this.colIn],
-        key: `rhl${i}`,
-        x:
-          this.left +
-          (this.colW / 4) * i +
-          this.colW / 4 -
-          (parseInt(this.rowIn / 2) * this.colW) / 16,
+      const rowLabel = range(this.rowIn).map((i) => this.tableData.headers[i + this.colIn]).join(' ');
+      return {
+        v: rowLabel,
+        x: this.left + this.inNameOffset / 2 + (this.colW / 4) * 1 + 4 - this.inNameOffset / 5,
         y: this.top + this.rowH - this.rowH / 4,
-      }));
+      };
     },
     rowHeader() {
       return range(this.rowIn * 2).map((i) => ({
@@ -254,6 +165,17 @@ export default {
         x: this.left + this.colW / 2,
         y: this.top + this.rowH * i + this.rowH + this.rowH / 2,
       }));
+    },
+    inNameOffset() {
+      const colLabel = range(this.colIn).map((i) => this.tableData.headers[i]).join('');
+      const rowLabel = range(this.rowIn).map((i) => this.tableData.headers[i + this.colIn]).join('');
+      if (Math.max(colLabel.length, rowLabel.length) <= 2) return 0;
+      const ctx = document.createElement('canvas').getContext('2d');
+      ctx.font = `${this.fontLabelSize}px "${this.fontFamily}"`;
+      let maxLen = Math.max(ctx.measureText(colLabel).width, ctx.measureText(rowLabel).width);
+      maxLen = maxLen + parseInt(maxLen / 30) * 50
+      return parseInt(maxLen);
+
     },
     tableBody() {
       const ch = this.colHeader.map((c) => c.v);
@@ -361,14 +283,14 @@ export default {
         const [ajy, py] = y1 == y2 ? [this.rowH / 2.4, 0] : [-4, 2];
         ret.push({
           type: 'arc',
-          x1: this.left + (x1 + 1) * this.colW + px,
+          x1: this.left + (x1 + 1) * this.colW + this.inNameOffset + px,
           y1: this.top + (y1 + 1) * this.rowH + py,
           rx: (w / 2) * this.colW + ajx,
           ry: (h / 2) * this.rowH + ajy,
           katamuki: 0,
           f1: 1,
           f2: f2 === 'r' ? 1 : 0,
-          x2: this.left + (x2 + 1) * this.colW - px,
+          x2: this.left + (x2 + 1) * this.colW + this.inNameOffset - px,
           y2: this.top + (y2 + 1) * this.rowH - py,
           key: 'arc' + x1 + y1 + x2 + y2,
         });
@@ -376,11 +298,11 @@ export default {
       const addBez = (x1, y1, cx, cy, x2, y2, px1, px2, py1, py2) => {
         ret.push({
           type: 'bez',
-          x1: this.left + (x1 + 1) * this.colW + px1,
+          x1: this.left + (x1 + 1) * this.colW + px1 + this.inNameOffset,
           y1: this.top + (y1 + 1) * this.rowH + py1,
-          cx: this.left + (cx + 1) * this.colW,
+          cx: this.left + (cx + 1) * this.colW + this.inNameOffset,
           cy: this.top + (cy + 1) * this.rowH,
-          x2: this.left + (x2 + 1) * this.colW + px2,
+          x2: this.left + (x2 + 1) * this.colW + px2 + this.inNameOffset,
           y2: this.top + (y2 + 1) * this.rowH + py2,
           key: 'arc2' + x1 + y1 + x2 + y2,
         });
@@ -388,7 +310,7 @@ export default {
       const addEllipse = (x, y, w, h) => {
         ret.push({
           type: 'ellipse',
-          cx: this.left + (x + 1) * this.colW + (w / 2) * this.colW,
+          cx: this.left + (x + 1) * this.colW + (w / 2) * this.colW + this.inNameOffset,
           cy: this.top + (y + 1) * this.rowH + (h / 2) * this.rowH,
           rx: (w * this.colW) / 2 - 2,
           ry: (h * this.rowH) / 2 - 2,
@@ -398,7 +320,7 @@ export default {
       const addRect = (x, y, w, h) => {
         ret.push({
           type: 'rect',
-          x: this.left + (x + 1) * this.colW + 8,
+          x: this.left + (x + 1) * this.colW + 8 + this.inNameOffset,
           y: this.top + (y + 1) * this.rowH + 8,
           width: w * this.colW - 16,
           height: h * this.rowH - 16,
@@ -475,14 +397,14 @@ export default {
         this.terms.length === 0
           ? '0'
           : this.terms.length === 1 && this.terms[0].length === 0
-          ? '1'
-          : this.terms
+            ? '1'
+            : this.terms
               .map((_) =>
                 _.length === 0
                   ? '1'
                   : _.map((_) => (_.sign === '1' ? _.input : `\\overline{${_.input}}`)).join(
-                      ` \\cdot `
-                    )
+                    ` \\cdot `
+                  )
               )
               .join('+');
 
@@ -497,8 +419,8 @@ export default {
         (this.terms.length === 0
           ? '0' //何も囲まれていない場合
           : this.terms.length === 1 && this.terms[0].length === 0
-          ? '1' //すべて囲まれている場合
-          : this.terms
+            ? '1' //すべて囲まれている場合
+            : this.terms
               .map((term) => {
                 let buff = '';
                 let psign = '';
@@ -535,7 +457,7 @@ export default {
       };
       const bcr = this.$refs.svgRoot.getBoundingClientRect();
       const [ox, oy] = [bcr.x, bcr.y].map((_) => parseInt(_));
-      const sc = selectCell(ev.clientX - ox - this.left, ev.clientY - oy - this.top);
+      const sc = selectCell(ev.clientX - ox - this.left - this.inNameOffset, ev.clientY - oy - this.top);
       if (sc[0] < 1 || this.colIn * 2 < sc[0] || sc[1] < 1 || this.rowIn * 2 < sc[1]) return;
       const scs = sc.join(',');
       const hasIdx = this.selects_.indexOf(scs);
@@ -669,7 +591,7 @@ export default {
           return [ch2idx[xl], rh2idx[yl]];
         })
       );
-      console.log(ch2idx, rh2idx);
+      // console.log(ch2idx, rh2idx);
 
       const acc3 = acc2.filter((_) => this.isAllNeighbor(_));
       // 同じ要素を含んでいるものを削除。ドントケアは無視する。
@@ -876,18 +798,21 @@ export default {
 svg {
   user-select: none;
 }
+
 .fomulas {
   justify-content: center;
   margin-left: -3px;
   margin-bottom: -4px;
   margin-right: 4px;
 }
+
 #fomula {
   overflow-x: scroll;
   font-size: 12px;
   flex-basis: 70%;
   padding-left: 8px;
 }
+
 .fomulas button {
   flex-basis: 25%;
 }
