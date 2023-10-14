@@ -25,9 +25,17 @@
                 </label>
               </v-list-item>
               <v-list-item>
+                <v-subheader dark>{{ $t('言語設定') }}</v-subheader>
                 <v-radio-group v-model="opts.lang" row v-on:change="launageSetup">
                   <v-radio color="white" label="日本語" value="ja"></v-radio>
                   <v-radio color="white" label="English" value="en"></v-radio>
+                </v-radio-group>
+              </v-list-item>
+              <v-list-item>
+                <v-subheader dark>{{ $t('入力名の長さ制限') }}</v-subheader>
+                <v-radio-group v-model="opts.displayLenLimit" row>
+                  <v-radio color="white" label="あり" value="yes"></v-radio>
+                  <v-radio color="white" label="なし" value="no"></v-radio>
                 </v-radio-group>
               </v-list-item>
             </v-list>
@@ -37,11 +45,7 @@
             <v-text-field v-model="projectName"></v-text-field>
           </v-toolbar-title>
           <v-spacer></v-spacer>
-          <a
-            href="https://github.com/Eniwder/KarnaughMapSolver"
-            target="_blank"
-            style="color: transparent"
-          >
+          <a href="https://github.com/Eniwder/KarnaughMapSolver" target="_blank" style="color: transparent">
             <v-btn icon>
               <v-icon>mdi-github</v-icon>
             </v-btn>
@@ -73,41 +77,23 @@
                 </v-col>
 
                 <v-col class="d-flex inout" cols="3">
-                  <v-select
-                    :items="[2, 3, 4]"
-                    :value="tab.sheets.meta.inputNum"
-                    label="Inputs"
-                    outlined
-                    @change="changeInOut(tab.id, 'input', $event)"
-                  ></v-select>
+                  <v-select :items="[2, 3, 4]" :value="tab.sheets.meta.inputNum" label="Inputs" outlined
+                    @change="changeInOut(tab.id, 'input', $event)"></v-select>
                 </v-col>
                 <v-col class="d-flex inout" cols="3">
-                  <v-select
-                    :items="[1, 2, 3]"
-                    :value="tab.sheets.meta.outputNum"
-                    label="Outputs"
-                    outlined
-                    @change="changeInOut(tab.id, 'output', $event)"
-                  ></v-select>
+                  <v-select :items="[1, 2, 3]" :value="tab.sheets.meta.outputNum" label="Outputs" outlined
+                    @change="changeInOut(tab.id, 'output', $event)"></v-select>
                 </v-col>
               </v-row>
 
               <v-row>
                 <v-col cols="12" sm="6" class="sheets" :style="{ height: tab.sheetHeight }">
                   <transition name="toggle-fade">
-                    <MySheets
-                      :tableData="tab.sheets"
-                      v-if="tab.show"
-                      @changeCell="changeCell(tab.id, $event)"
-                    ></MySheets>
+                    <MySheets :tableData="tab.sheets" v-if="tab.show" @changeCell="changeCell(tab.id, $event)"></MySheets>
                   </transition>
                 </v-col>
                 <v-col cols="12" sm="6" class="karnaughTable">
-                  <KarnaughCtrl
-                    :tables="karnaughTable"
-                    ref="karnaughTable"
-                    @grouped="grouped($event)"
-                  ></KarnaughCtrl>
+                  <KarnaughCtrl :tables="karnaughTable" ref="karnaughTable" @grouped="grouped($event)"></KarnaughCtrl>
                 </v-col>
               </v-row>
             </v-container>
@@ -148,7 +134,10 @@ export default {
         { title: 'ファイルへ保存', icon: 'mdi-download', handlar: this.export },
         // { title: 'ファイルを読み込み', handlar: this.import },
       ],
-      opts: { lang: window.navigator.language.startsWith('ja') ? 'ja' : 'en' },
+      opts: {
+        lang: window.navigator.language.startsWith('ja') ? 'ja' : 'en',
+        displayLenLimit: 'yes'
+      },
     };
   },
   computed: {
@@ -338,8 +327,10 @@ export default {
       const tabId = this.tabs.findIndex((_) => _.id === id);
       const [y, x, old, v] = e;
       let nextRow = [...this.tabs[tabId].sheets.body[y]];
-      // 出力ラベルのみ2文字以上を許可。需要次第で要検討
-      if (y === 0 && x >= this.tabs[tabId].sheets.meta.inputNum) {
+      // 出力ラベルは2文字以上を許可
+      // 入力ラベルはオプションが有効な場合は2文字以上を許可
+      if ((y === 0 && x >= this.tabs[tabId].sheets.meta.inputNum) ||
+        (y === 0 && x < this.tabs[tabId].sheets.meta.inputNum && this.opts.displayLenLimit === 'no')) {
         nextRow[x] = v || old;
       } else {
         nextRow[x] = (v && v[0]) || old;
@@ -356,8 +347,17 @@ export default {
       }
     },
   },
-  watch: {},
+  watch: {
+    opts: {
+      handler: function (newVal, oldVal) {
+        Object.entries(this.opts).forEach((([k, v]) => localStorage.setItem(k, v)))
+      },
+      // deepがfalseだとオブジェクト内の値が変更されても処理が実行されない
+      deep: true,
+    }
+  },
   mounted() {
+    Object.keys(this.opts).forEach((k => this.opts[k] = localStorage.getItem(k)))
     this.launageSetup();
     this.addTab();
     this.tabs.forEach((_) => (_.modified = false));
@@ -388,6 +388,7 @@ export default {
 .v-input {
   align-items: normal !important;
 }
+
 .inout {
   margin-top: 12px;
 }
@@ -402,6 +403,7 @@ export default {
   min-width: 400px;
   flex-basis: 30%;
 }
+
 .v-tab {
   text-transform: none !important;
 }
@@ -413,6 +415,7 @@ export default {
 .v-select {
   min-width: 72px !important;
 }
+
 .v-select .v-text-field__details {
   display: none !important;
 }
@@ -425,7 +428,7 @@ export default {
   margin-top: 24px !important;
 }
 
-.v-tabs-slider-wrapper + .v-tab {
+.v-tabs-slider-wrapper+.v-tab {
   margin-left: 0px !important;
 }
 
@@ -446,6 +449,7 @@ div[role='tab'] div .v-btn--icon {
 .toggle-fade-leave-active {
   transition: opacity 0.6s ease;
 }
+
 .toggle-fade-enter,
 .toggle-fade-leave-to {
   opacity: 0;
@@ -454,18 +458,22 @@ div[role='tab'] div .v-btn--icon {
 div[role='menu'] .v-list {
   background-color: #000000b5;
 }
+
 div[role='menu'] .v-list-item__title {
   color: #e1e1e1;
   cursor: pointer;
 }
+
 div[role='menu'] .v-list i {
   margin-right: 8px;
   color: #e1e1e1;
 }
+
 div[role='menu'] .v-list label {
   margin-right: 8px;
   color: #e1e1e1;
 }
+
 .import input[type='file'] {
   display: none;
 }
