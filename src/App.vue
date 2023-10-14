@@ -31,13 +31,6 @@
                   <v-radio color="white" label="English" value="en"></v-radio>
                 </v-radio-group>
               </v-list-item>
-              <v-list-item>
-                <v-subheader dark>{{ $t('入力名の長さ制限') }}</v-subheader>
-                <v-radio-group v-model="opts.displayLenLimit" row>
-                  <v-radio color="white" label="ON" value="yes"></v-radio>
-                  <v-radio color="white" label="OFF" value="no"></v-radio>
-                </v-radio-group>
-              </v-list-item>
             </v-list>
           </v-menu>
 
@@ -135,8 +128,7 @@ export default {
         // { title: 'ファイルを読み込み', handlar: this.import },
       ],
       opts: {
-        lang: window.navigator.language.startsWith('ja') ? 'ja' : 'en',
-        displayLenLimit: 'yes'
+        lang: window.navigator.language.startsWith('ja') ? 'ja' : 'en'
       },
     };
   },
@@ -327,10 +319,8 @@ export default {
       const tabId = this.tabs.findIndex((_) => _.id === id);
       const [y, x, old, v] = e;
       let nextRow = [...this.tabs[tabId].sheets.body[y]];
-      // 出力ラベルは2文字以上を許可
-      // 入力ラベルはオプションが有効な場合は2文字以上を許可
-      if ((y === 0 && x >= this.tabs[tabId].sheets.meta.inputNum) ||
-        (y === 0 && x < this.tabs[tabId].sheets.meta.inputNum && this.opts.displayLenLimit === 'no')) {
+      // 入出力ラベルは2文字以上を許可
+      if (y === 0) {
         nextRow[x] = v || old;
       } else {
         nextRow[x] = (v && v[0]) || old;
