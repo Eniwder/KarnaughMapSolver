@@ -802,18 +802,18 @@ svg {
   margin-left: -3px;
   margin-bottom: -4px;
   margin-right: 4px;
+  max-width: 600px;
 }
 
 #fomula {
   overflow-x: scroll;
   font-size: 12px;
-  flex-basis: 70%;
+  flex-basis: calc(95% - 48px);
   padding-left: 8px;
 }
 
 .fomulas button {
-  flex-basis: 25%;
+  width: 48px
 }
 </style>
-
         
