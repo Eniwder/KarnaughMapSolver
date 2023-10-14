@@ -34,8 +34,8 @@
               <v-list-item>
                 <v-subheader dark>{{ $t('入力名の長さ制限') }}</v-subheader>
                 <v-radio-group v-model="opts.displayLenLimit" row>
-                  <v-radio color="white" label="あり" value="yes"></v-radio>
-                  <v-radio color="white" label="なし" value="no"></v-radio>
+                  <v-radio color="white" label="ON" value="yes"></v-radio>
+                  <v-radio color="white" label="OFF" value="no"></v-radio>
                 </v-radio-group>
               </v-list-item>
             </v-list>
