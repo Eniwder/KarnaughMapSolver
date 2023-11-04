@@ -359,6 +359,10 @@ export default {
 </script>
 
 <style>
+#app {
+  background-color: #f9fafb;
+}
+
 .theme--light.v-tabs-items {
   background-color: inherit !important;
 }
