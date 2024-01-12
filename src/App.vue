@@ -78,10 +78,8 @@
 
           <v-row>
             <v-col cols="12" sm="6" class="sheets" :style="{ height: tab.sheetHeight }">
-              <transition name="toggle-fade">
-                <MySheets :tableData="tab.sheets" @changeCell="changeCell(tab.id, $event, idx)" ref="sheetsRef">
-                </MySheets>
-              </transition>
+              <MySheets :tableData="tab.sheets" @changeCell="changeCell(tab.id, $event, idx)" ref="sheetsRef">
+              </MySheets>
             </v-col>
             <v-col cols="12" sm="6" class="karnaughTable">
               <KarnaughCtrl :tables="karnaughTable" ref="karnaughTableRef" @grouped="grouped($event)"></KarnaughCtrl>
@@ -415,16 +413,6 @@ button[role='tab'] div .v-btn--icon {
 .v-input__slot,
 .v-btn {
   min-height: 48px !important;
-}
-
-.toggle-fade-enter-active,
-.toggle-fade-leave-active {
-  transition: all 1.6s ease;
-}
-
-.toggle-fade-enter,
-.toggle-fade-leave-to {
-  opacity: 0;
 }
 
 .optMenu .v-list {
