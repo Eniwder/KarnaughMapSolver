@@ -709,10 +709,9 @@ function regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
   // 3変数の場合オプションの適用順序によって変形順序が異なるので、
   // 一度全ての変形を標準に戻してからオプションに従って変形をする。
   // 綺麗な法則が分からなかったので愚直に変換をする。数式から戻すのが理想か…？
-  group_.splice(0, group_.length);
 
   // まずは戻す
-  group.value.map((grp) =>
+  regroup(group.value.map((grp) =>
     grp
       .map(([x, y]) => {
         let [dx, dy] = [x, y];
@@ -728,7 +727,7 @@ function regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
         return `${dx + 1},${dy + 1}`;
       })
       .join('@')
-  )
+  ))
   // 次に変形
   regroup(group.value.map((grp) =>
     grp
@@ -754,11 +753,11 @@ onMounted(() => {
   Object.assign(group, tableData.value.grp || []);
 })
 watch(group_, () => { emit('grouped', [tableData.value.outIdx, group_]); })
-watch(() => props.optView.A_BC_or_A_BC, (newV, oldV) => {
-  regroup4changeView(props.optView.AB_or_BA, props.optView.AB_or_BA, newV, oldV);
-})
 watch(() => props.optView.AB_or_BA, (newV, oldV) => {
   regroup4changeView(newV, oldV, props.optView.A_BC_or_A_BC, props.optView.A_BC_or_A_BC);
+})
+watch(() => props.optView.A_BC_or_A_BC, (newV, oldV) => {
+  regroup4changeView(props.optView.AB_or_BA, props.optView.AB_or_BA, newV, oldV);
 })
 </script>
 
