@@ -79,7 +79,7 @@ const props = defineProps({
   },
 })
 const emit = defineEmits(["grouped"])
-defineExpose({ changeCell, updateMsg, reset })
+defineExpose({ changeCell, updateMsg, reset, deletedTab })
 
 const optExport = [
   { title: 'PNG保存', icon: 'mdi-download', handlar: () => save('png') },
@@ -108,7 +108,7 @@ const optView = reactive([
 ])
 
 const tabItems = computed(() => {
-  if (!props.tables.map) return {};
+  if (!props.tables.map) return [];
   return props.tables.map((t, idx) => ({
     name: t.outName,
     key: `tb${t.outName}${idx}`,
@@ -167,10 +167,7 @@ function save(ext) {
 function reset(idx) {
   activeKarnaugh.value.reset();
   if (idx >= 0 && idx < tabItem.length) {
-    msg.value = t(`タブ@@@の内容をリセットしました。`).replace(
-      '@@@',
-      activeKarnaugh.value.name
-    );
+    msg.value = t(`タブ@@@の内容をリセットしました。`).replace('@@@', activeKarnaugh.value.name);
   }
 }
 
@@ -190,13 +187,17 @@ function changeCell(outIdx) {
   }
 }
 
+// 新たにn個のタブになる
+function deletedTab(n) {
+  // 選択中のタブに影響が無い場合は何もしない
+  if (tabItems.value.length < n || selectedTab.value < n) return;
+  selectedTab.value = n - 1;
+}
+
 onMounted(() => {
   selectedTab.value = 0;
 })
 
-watch(optView, () => {
-  // reset();
-})
 </script>
 
 <style scoped>

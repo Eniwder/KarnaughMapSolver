@@ -271,6 +271,10 @@ function changeInOut(id, inout, event, idx) {
         tabs[tabId].sheets.body[row][i] = oldBody[row][i];
       });
     }
+    // 出力が減った場合はタブの位置を修正
+    if (tabs[tabId].sheets.body[0].length < oldBody[0].length) {
+      karnaughTableRef.value[idx].deletedTab(outputNum);
+    }
   }
 
   const heightMap = ['0px', '0px', '180px', '280px', '500px'];
@@ -415,7 +419,7 @@ button[role='tab'] div .v-btn--icon {
 
 .toggle-fade-enter-active,
 .toggle-fade-leave-active {
-  transition: opacity 0.6s ease;
+  transition: all 1.6s ease;
 }
 
 .toggle-fade-enter,
