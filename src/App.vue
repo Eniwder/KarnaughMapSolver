@@ -243,9 +243,10 @@ function addTab() {
     modified: true,
   });
 
-  nextTick(() => {
+  // nextTickだと真理値表がレンダリングされる前？なのでその対策
+  setTimeout(() => {
     tab.value = tabId;
-  });
+  }, 1);
 }
 
 function deleteTab(id) {
@@ -392,6 +393,11 @@ onMounted(() => {
 
 .v-tab .mdi-close {
   font-size: 16px !important;
+}
+
+.v-tab .mdi-close::before {
+  margin-top: -3px;
+  margin-left: -1px;
 }
 
 button[role='tab'] div .v-btn--icon {
