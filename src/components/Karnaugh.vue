@@ -780,9 +780,26 @@ svg {
 
 #fomula {
   overflow-x: scroll;
+  scrollbar-width: thin;
   font-size: 12px;
   flex-basis: calc(95% - 48px);
   padding-left: 8px;
+  height: 60px;
+}
+
+#fomula::-webkit-scrollbar {
+  height: 8px;
+}
+
+#fomula::-webkit-scrollbar-track {
+  border-radius: 10px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, .1);
+}
+
+#fomula::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 50, .5);
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .3);
 }
 
 .fomulas button {
