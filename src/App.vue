@@ -38,12 +38,9 @@
         </v-responsive>
       </v-toolbar-title>
 
-      <v-spacer></v-spacer>
-      <a href="https://github.com/Eniwder/KarnaughMapSolver" target="_blank" style="color: transparent">
-        <v-btn icon>
-          <v-icon>mdi-github</v-icon>
-        </v-btn>
-      </a>
+      <v-btn icon href="https://github.com/Eniwder/KarnaughMapSolver" target="_blank">
+        <v-icon>mdi-github</v-icon>
+      </v-btn>
       <!-- タブ一覧 -->
       <template v-slot:extension>
         <v-tabs v-model="tab" slider-color="yellow">
