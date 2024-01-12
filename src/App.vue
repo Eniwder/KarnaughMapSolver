@@ -33,7 +33,9 @@
       </v-menu>
 
       <v-toolbar-title>
-        <v-text-field v-model="projectName" variant="underlined"></v-text-field>
+        <v-responsive max-width="344">
+          <v-text-field v-model="projectName" variant="underlined"></v-text-field>
+        </v-responsive>
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
@@ -62,11 +64,13 @@
         <v-container class="grey-lighten-5 margin-initial">
           <v-row>
             <v-col class="d-flex" cols="3">
-              <v-text-field v-model="tab.name" variant="underlined">
-                <!-- <v-icon slot="prepend">mdi-pencil</v-icon> -->
-              </v-text-field>
+              <v-responsive max-width="180">
+                <v-text-field v-model="tab.name" variant="underlined">
+                  <!-- <v-icon slot="prepend">mdi-pencil</v-icon> -->
+                </v-text-field>
+              </v-responsive>
             </v-col>
-            <v-col class="d-flex inout inout-f" cols="3">
+            <v-col class="d-flex inout" cols="3">
               <v-select :items="[2, 3, 4]" variant="outlined" v-model="tab.sheets.meta.inputNum" label="Inputs"
                 @update:modelValue="changeInOut(tab.id, 'input', $event, idx)"></v-select>
             </v-col>
@@ -343,10 +347,6 @@ onMounted(() => {
 
 .v-input {
   align-items: normal !important;
-}
-
-.inout-f {
-  margin-left: 24px !important;
 }
 
 .v-toolbar-title .v-field {
