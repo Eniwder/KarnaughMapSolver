@@ -1,137 +1,146 @@
 <template>
-  <hot-table
-    :settings="hotSettings"
-    licenseKey="non-commercial-and-evaluation"
-    ref="hotTable"
-    :data="tableData.body"
-  >
-    <hot-column
-      v-for="(header, idx) in tableData.headers"
-      :key="header"
-      :title="header"
-      :read-only="idx < tableData.meta.inputNum"
-    >
-    </hot-column>
-  </hot-table>
+  <hot-table :settings="hotSettings" ref="_hotTable"> </hot-table>
 </template>
 
-<script>
-import { HotTable, HotColumn } from '@handsontable/vue';
-const range = (n) => [...Array(n).keys()];
+<script setup>
+import { HotTable } from '@handsontable/vue3';
+import { reactive, computed } from 'vue';
+import { defineProps, ref, defineEmits, watch, nextTick, defineExpose } from 'vue';
+import { registerAllModules } from 'handsontable/registry';
+import { useI18n } from "vue-i18n";
+const { t } = useI18n({ useScope: "global" });
+registerAllModules();
+defineExpose({ translateHeader })
+const emit = defineEmits(["changeCell"])
+const _hotTable = ref(null)
 
-export default {
-  props: {
-    tableData: {
-      meta: {
-        inputNum: Number,
-        outputNum: Number,
-      },
-      headers: [],
-      body: [],
+const range = (n) => [...Array(n).keys()];
+const props = defineProps({
+  tableData: {
+    meta: {
+      inputNum: Number,
+      outputNum: Number,
     },
+    headers: [],
+    body: [],
   },
-  computed: {},
-  data: function () {
-    const totalCol = this.tableData.meta.inputNum + this.tableData.meta.outputNum;
-    const self = this;
-    return {
-      hotSettings: {
-        data: Object,
-        colHeaders: Array,
-        afterChange(e) {
-          // 同時に編集したセルが配列で全て渡される
-          // [[y, x, old, new],...]
-          if (!e || typeof e !== 'object') return;
-          e.forEach((cell) => {
-            self.$emit('changeCell', cell);
-          });
+})
+const tableData = reactive(props.tableData);
+const totalCol = computed(() => tableData.meta.inputNum + tableData.meta.outputNum);
+const cellSetting = computed(() =>
+  [
+    ...range(totalCol.value).map((n) => ({
+      row: 0,
+      col: n,
+      readOnly: false,
+      className: 'htCenter',
+    })),
+    ...range(Math.pow(2, tableData.meta.inputNum) * totalCol.value).map((n) => ({
+      row: parseInt(n / totalCol.value) + 1,
+      col: n % totalCol.value,
+      className: 'htCenter',
+      readOnly: (n % totalCol.value) < tableData.meta.inputNum,
+    })),
+  ]
+)
+const customBordersSetting = computed(() =>
+  [
+    {
+      range: {
+        from: {
+          row: 0,
+          col: 0,
         },
-        height: '100%',
-        rowHeights: 24,
-        cell: [
-          ...range(totalCol).map((n) => ({
-            row: 0,
-            col: n,
-            readOnly: false,
-            className: 'htCenter',
-          })),
-          ...range(Math.pow(2, this.tableData.meta.inputNum) * totalCol).map((n) => ({
-            row: parseInt(n / totalCol) + 1,
-            col: n % totalCol,
-            className: 'htCenter',
-          })),
-        ],
-        customBorders: [
-          {
-            range: {
-              from: {
-                row: 0,
-                col: 0,
-              },
-              to: {
-                row: 0,
-                col: totalCol,
-              },
-            },
-            bottom: {
-              width: 3,
-              color: 'lightgray',
-            },
-          },
-          {
-            range: {
-              from: {
-                row: 0,
-                col: this.tableData.meta.inputNum - 1,
-              },
-              to: {
-                row: Math.pow(2, this.tableData.meta.inputNum),
-                col: this.tableData.meta.inputNum - 1,
-              },
-            },
-            right: {
-              width: 3,
-              color: 'lightgray',
-            },
-          },
-          {
-            row: 0,
-            col: this.tableData.meta.inputNum,
-            left: {
-              width: 3,
-              color: 'lightgray',
-            },
-          },
-        ],
+        to: {
+          row: 0,
+          col: totalCol.value,
+        },
       },
-    };
-  },
-  components: {
-    HotTable,
-    HotColumn,
-  },
-  methods: {
-    changeCell(e) {
-      console.log(e);
+      bottom: {
+        width: 3,
+        color: 'lightgray',
+      },
     },
+    {
+      range: {
+        from: {
+          row: 0,
+          col: tableData.meta.inputNum - 1,
+        },
+        to: {
+          row: Math.pow(2, tableData.meta.inputNum),
+          col: tableData.meta.inputNum - 1,
+        },
+      },
+      right: {
+        width: 3,
+        color: 'lightgray',
+      },
+    },
+    {
+      row: 0,
+      col: tableData.meta.inputNum,
+      left: {
+        width: 3,
+        color: 'lightgray',
+      },
+    },
+  ]
+)
+
+const hotSettings = reactive({
+  licenseKey: 'non-commercial-and-evaluation',
+  data: tableData.body,
+  colHeaders: tableData.headers,
+  afterRenderer() {
+    setThColor()
   },
-  mounted() {
-    const th = this.$refs.hotTable.$el.querySelectorAll('th');
-    process.nextTick(() => {
-      if (!th[this.tableData.meta.inputNum * 2 + this.tableData.meta.outputNum]) return;
-      th[this.tableData.meta.inputNum * 2 + this.tableData.meta.outputNum].style.borderLeft =
-        '2px solid lightgray';
+  afterChange(e) {
+    // 同時に編集したセルが配列で全て渡される
+    // [[y, x, old, new],...]
+    if (!e || typeof e !== 'object') return;
+    e.forEach((cell) => {
+      emit('changeCell', cell);
     });
   },
-  watch: {
-    // _tableData() {
-    //   this.hotSettings.data = this._tableData.body;
-    //   this.hotSettings.colHeaders = this._tableData.headers;
-    //   console.log(this.hotSettings.colHeaders);
-    //   this.$refs.hotTable.hotInstance.updateSettings(this.hotSettings);
-    // },
-  },
-};
+  height: '100%',
+  rowHeights: 24,
+  cell: cellSetting,
+  customBorders: customBordersSetting
+})
+
+
+function changeCell(e) {
+  console.log(e);
+}
+
+function setThColor() {
+  function helper() {
+    const th = _hotTable.value.$el.querySelectorAll(`th[aria-colindex="${tableData.meta.inputNum + 1}"]`)
+    if (!th[1]) return false;
+    th[1].style.borderLeft = '2px solid lightgray'; // 何故か2個あって後者にスタイルが必要
+    return true;
+  }
+  nextTick(() => helper())
+}
+
+function translateHeader() {
+  // TODO なぜかセルの設定が初期化されるので保留
+  // hotSettings.data = tableData.body;
+  // hotSettings.colHeaders = [
+  //   ...range(tableData.meta.inputNum).map((n) => `${t('入力')}${n + 1}`),
+  //   ...range(tableData.meta.outputNum).map((n) => `${t('出力')}${n + 1}`),
+  // ]
+  // _hotTable.value.hotInstance.loadData(hotSettings);
+}
+
+watch(() => props.tableData, (val) => {
+  Object.assign(tableData, val)
+  hotSettings.data = tableData.body;
+  hotSettings.colHeaders = tableData.headers;
+  _hotTable.value.hotInstance.loadData(hotSettings);
+});
+
 </script>
 
 <style>
@@ -140,7 +149,4 @@ export default {
 }
 </style>
 
-<style src="../../node_modules/handsontable/dist/handsontable.full.css">
-</style>
-
-        
+<style src="../../node_modules/handsontable/dist/handsontable.full.css"></style>

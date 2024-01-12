@@ -1,5 +1,5 @@
 [![GitHub Pages](https://github.com/Eniwder/KarnaughMapSolver/actions/workflows/gh-pages.yml/badge.svg)](https://github.com/Eniwder/KarnaughMapSolver/actions/workflows/gh-pages.yml)
-![](https://img.shields.io/badge/vue-2.x-brightgreen.svg)
+![](https://img.shields.io/badge/vue-3.x-brightgreen.svg)
 
 [README in English](https://github.com/Eniwder/KarnaughMapSolver/blob/main/README-en.md)
 

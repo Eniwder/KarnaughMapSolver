@@ -1,12 +1,13 @@
-import Vue from 'vue'
 import App from './App.vue'
-import vuetify from './plugins/vuetify';
 import i18n from "./i18n";
+import { registerPlugins } from '@/plugins'
+import { createApp } from 'vue'
 
-Vue.config.productionTip = false
+const app = createApp(App)
 
-new Vue({
-  vuetify,
-  i18n,
-  render: h => h(App)
-}).$mount('#app')
+registerPlugins(app)
+app.use(i18n)
+
+app.mount('#app')
+
+

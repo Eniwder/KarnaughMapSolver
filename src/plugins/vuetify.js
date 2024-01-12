@@ -1,8 +1,17 @@
-import Vue from 'vue';
-import Vuetify from 'vuetify/lib/framework';
-import colors from 'vuetify/lib/util/colors';
+/**
+ * plugins/vuetify.js
+ *
+ * Framework documentation: https://vuetifyjs.com`
+ */
 
-Vue.use(Vuetify);
+// Styles
+import '@mdi/font/css/materialdesignicons.css'
+import 'vuetify/styles'
 
-export default new Vuetify({
-});
+// Composables
+import { createVuetify } from 'vuetify'
+
+// https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
+export default createVuetify({
+  //
+})

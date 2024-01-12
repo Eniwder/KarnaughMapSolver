@@ -1,370 +1,327 @@
 <template>
   <v-app id="app">
-    <template>
-      <v-card class="grey lighten-5" flat>
-        <v-toolbar color="indigo" dark flat>
-          <v-menu offset-y class="optMenu" :close-on-content-click="false">
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn icon dark v-bind="attrs" v-on="on">
-                <v-icon>mdi-dots-vertical</v-icon>
-              </v-btn>
-            </template>
-            <v-list>
-              <v-list-item v-for="(item, index) in optMenu" :key="index">
-                <v-icon>{{ item.icon }}</v-icon>
-                <v-list-item-title @click="item.handlar">{{ $t(item.title) }} </v-list-item-title>
-              </v-list-item>
-              <v-list-item>
-                <label class="import">
-                  <v-list-item-title>
-                    <v-icon>mdi-upload</v-icon>
-                    <input type="file" accept="application/json" @change="loadFile($event)" />{{
-                      $t('ファイルを読み込み')
-                    }}
-                  </v-list-item-title>
-                </label>
-              </v-list-item>
-              <v-list-item>
-                <v-subheader dark>{{ $t('言語設定') }}</v-subheader>
-                <v-radio-group v-model="opts.lang" row v-on:change="launageSetup">
-                  <v-radio color="white" label="日本語" value="ja"></v-radio>
-                  <v-radio color="white" label="English" value="en"></v-radio>
-                </v-radio-group>
-              </v-list-item>
-            </v-list>
-          </v-menu>
+    <v-toolbar color="indigo">
+      <v-menu class="optMenu" :close-on-content-click="false">
+        <template v-slot:activator="{ props }">
+          <v-btn icon variant="text" v-bind="props">
+            <v-icon>mdi-dots-vertical</v-icon>
+          </v-btn>
+        </template>
+        <v-list>
+          <v-list-subheader>{{ $t('プロジェクト設定') }}</v-list-subheader>
+          <v-list-item v-for="(item, index) in optMenu" :key="index" :prepend-icon="item.icon" :title="$t(item.title)"
+            @click="item.handlar">
+          </v-list-item>
+          <!-- @clickをつけることでホバー時にオーバーレイがかかる -->
+          <v-list-item prepend-icon="mdi-upload" @click="">
+            <label class="import">
+              <v-list-item-title>
+                <input type="file" accept="application/json" @change="loadFile($event)" />{{
+                  $t('ファイルを読み込み')
+                }}
+              </v-list-item-title>
+            </label>
+          </v-list-item>
+          <v-list-subheader>{{ $t('言語設定') }}</v-list-subheader>
+          <v-list-item>
+            <v-radio-group v-model="opts.lang" inline v-on:change="languageSetup">
+              <v-radio label="日本語" value="ja"></v-radio>
+              <v-radio label="English" value="en"></v-radio>
+            </v-radio-group>
+          </v-list-item>
+        </v-list>
+      </v-menu>
 
-          <v-toolbar-title>
-            <v-text-field v-model="projectName"></v-text-field>
-          </v-toolbar-title>
-          <v-spacer></v-spacer>
-          <a href="https://github.com/Eniwder/KarnaughMapSolver" target="_blank" style="color: transparent">
-            <v-btn icon>
-              <v-icon>mdi-github</v-icon>
-            </v-btn>
-          </a>
-          <!-- タブ一覧 -->
-          <template v-slot:extension>
-            <v-tabs v-model="tab" align-with-title center-active>
-              <v-tabs-slider color="yellow"></v-tabs-slider>
-              <v-tab v-for="tab in tabs" :key="tab.id" :data-id="tab.id">
-                {{ tab.name }}
-                <close-button :tab="tab" @confirmDelete="tabDelete(tab.id)"></close-button>
-              </v-tab>
-              <v-btn icon @click="addTab">
-                <v-icon>mdi-plus</v-icon>
-              </v-btn>
-            </v-tabs>
-          </template>
-        </v-toolbar>
+      <v-toolbar-title>
+        <v-text-field v-model="projectName" variant="underlined"></v-text-field>
+      </v-toolbar-title>
 
-        <!-- タブの中身 -->
-        <v-tabs-items v-model="tab">
-          <v-tab-item v-for="tab in tabs" :key="tab.id">
-            <v-container class="grey lighten-5 margin-initial">
-              <v-row>
-                <v-col class="d-flex" cols="3">
-                  <v-text-field v-model="tab.name" class="shrink">
-                    <!-- <v-icon slot="prepend">mdi-pencil</v-icon> -->
-                  </v-text-field>
-                </v-col>
+      <v-spacer></v-spacer>
+      <a href="https://github.com/Eniwder/KarnaughMapSolver" target="_blank" style="color: transparent">
+        <v-btn icon>
+          <v-icon>mdi-github</v-icon>
+        </v-btn>
+      </a>
+      <!-- タブ一覧 -->
+      <template v-slot:extension>
+        <v-tabs v-model="tab" slider-color="yellow">
+          <v-tab v-for="tab in tabs" :key="tab.id" :data-id="tab.id">
+            {{ tab.name }}
+            <close-button :tab="tab" @confirmDelete="deleteTab(tab.id)"></close-button>
+          </v-tab>
+          <v-btn icon @click="addTab">
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
+        </v-tabs>
+      </template>
+    </v-toolbar>
 
-                <v-col class="d-flex inout" cols="3">
-                  <v-select :items="[2, 3, 4]" :value="tab.sheets.meta.inputNum" label="Inputs" outlined
-                    @change="changeInOut(tab.id, 'input', $event)"></v-select>
-                </v-col>
-                <v-col class="d-flex inout" cols="3">
-                  <v-select :items="[1, 2, 3]" :value="tab.sheets.meta.outputNum" label="Outputs" outlined
-                    @change="changeInOut(tab.id, 'output', $event)"></v-select>
-                </v-col>
-              </v-row>
+    <!-- タブの中身 -->
+    <v-window v-model="tab">
+      <v-window-item v-for="tab in tabs" :key="tab.id">
+        <v-container class="grey-lighten-5 margin-initial">
+          <v-row>
+            <v-col class="d-flex" cols="3">
+              <v-text-field v-model="tab.name" variant="underlined">
+                <!-- <v-icon slot="prepend">mdi-pencil</v-icon> -->
+              </v-text-field>
+            </v-col>
+            <v-col class="d-flex inout inout-f" cols="3">
+              <v-select :items="[2, 3, 4, 5, 6]" variant="outlined" v-model="tab.sheets.meta.inputNum" label="Inputs"
+                @update:modelValue="changeInOut(tab.id, 'input', $event)"></v-select>
+            </v-col>
+            <v-col class="d-flex inout" cols="3">
+              <v-select :items="[1, 2, 3, 4, 5, 6, 7, 8, 9]" variant="outlined" v-model="tab.sheets.meta.outputNum"
+                label="Outputs" @update:modelValue="changeInOut(tab.id, 'output', $event)"></v-select>
+            </v-col>
+          </v-row>
 
-              <v-row>
-                <v-col cols="12" sm="6" class="sheets" :style="{ height: tab.sheetHeight }">
-                  <transition name="toggle-fade">
-                    <MySheets :tableData="tab.sheets" v-if="tab.show" @changeCell="changeCell(tab.id, $event)"></MySheets>
-                  </transition>
-                </v-col>
-                <v-col cols="12" sm="6" class="karnaughTable">
-                  <KarnaughCtrl :tables="karnaughTable" ref="karnaughTable" @grouped="grouped($event)"></KarnaughCtrl>
-                </v-col>
-              </v-row>
-            </v-container>
-          </v-tab-item>
-        </v-tabs-items>
-      </v-card>
-    </template>
+          <v-row>
+            <v-col cols="12" sm="6" class="sheets" :style="{ height: tab.sheetHeight }">
+              <transition name="toggle-fade">
+                <MySheets :tableData="tab.sheets" @changeCell="changeCell(tab.id, $event)" ref="sheetsRef"></MySheets>
+              </transition>
+            </v-col>
+            <v-col cols="12" sm="6" class="karnaughTable">
+              <KarnaughCtrl :tables="karnaughTable" ref="karnaughTableRef" @grouped="grouped($event)"></KarnaughCtrl>
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-window-item>
+    </v-window>
   </v-app>
 </template>
 
-<script>
+<script setup>
 import MySheets from './components/MySheets.vue';
 import KarnaughCtrl from './components/KarnaughCtrl.vue';
 import CloseButton from './components/CloseButtonWithDialog.vue';
 import { saveAs } from 'file-saver';
+import { reactive, ref, watch, onMounted, computed, nextTick } from 'vue'
+import { useI18n } from "vue-i18n";
+const { t, locale } = useI18n({ useScope: "global" });
 
 const range = (n) => [...Array(n).keys()];
 Array.prototype.zip = function (...args) {
   const new_array = [];
-  for (let i = 0; i < this.length; i++) {
+  for (let i = 0; i < length; i++) {
     new_array.push([this[i], ...args.map((arg) => arg[i])]);
   }
   return new_array;
 };
+
+const optMenu = [
+  { title: t('ファイルへ保存'), icon: 'mdi-download', handlar: exportProject },
+  // { title: 'ファイルを読み込み', handlar: loadFile },
+]
+
 // TODO 消したタブを戻せる
 // TODO github flow (electron build)
 // TODO 図サイズ変更
+const projectName = ref('Project1');
+const tab = ref(0);
+const tabs = reactive([]);
+const karnaughTableRef = ref(null);
+const sheetsRef = ref(null)
 
-export default {
-  name: 'App',
-  components: { MySheets, CloseButton, KarnaughCtrl },
-  data() {
-    return {
-      projectName: 'Project1',
-      tab: 0,
-      tabs: [],
-      optMenu: [
-        { title: 'ファイルへ保存', icon: 'mdi-download', handlar: this.export },
-        // { title: 'ファイルを読み込み', handlar: this.import },
-      ],
-      opts: {
-        lang: window.navigator.language.startsWith('ja') ? 'ja' : 'en'
-      },
-    };
-  },
-  computed: {
-    activeTab() {
-      return this.tabs[this.tab];
-    },
-    karnaughTable() {
-      if (!this.activeTab) return {};
-      return range(this.activeTab.sheets.meta.outputNum).map((idx) => {
-        const ret = {};
-        const tab = this.activeTab;
-        ret.inputNum = tab.sheets.meta.inputNum;
-        ret.headers = tab.sheets.body[0].slice(0, ret.inputNum);
-        ret.outName = tab.sheets.body[0][ret.inputNum + idx];
-        ret.body = tab.sheets.body.filter((_, idx) => idx !== 0);
-        ret.key = ret.outName + idx;
-        ret.grp = tab.sheets.grp[idx];
-        ret.outIdx = idx; // bodyを分けほうがよかったかもしれない
-        return ret;
+const opts = reactive({
+  lang: window.navigator.language.startsWith('ja') ? 'ja' : 'en'
+})
+const activeTab = computed(() => tabs[tab.value])
+const karnaughTable = computed(() => {
+  if (!activeTab.value) return {};
+  return range(activeTab.value.sheets.meta.outputNum).map((idx) => {
+    const ret = {};
+    const tab = activeTab.value;
+    ret.inputNum = tab.sheets.meta.inputNum;
+    ret.headers = tab.sheets.body[0].slice(0, ret.inputNum);
+    ret.outName = tab.sheets.body[0][ret.inputNum + idx];
+    ret.body = tab.sheets.body.filter((_, idx) => idx !== 0);
+    ret.key = ret.outName + idx;
+    ret.grp = tab.sheets.grp[idx];
+    ret.outIdx = idx; // bodyを分けほうがよかったかもしれない
+    return ret;
+  });
+})
+
+function exportProject() {
+  const save = {};
+  tabs.forEach((tab) => {
+    tab.modified = false;
+  });
+  save.tabs = tabs;
+  save.config = {
+    projectName: projectName.value,
+  };
+  const blob = new Blob([JSON.stringify(save)], {
+    type: 'application/json',
+  });
+  saveAs(blob, `${projectName.value}.json`);
+}
+
+function languageSetup() {
+  // localeを直接v-modelに指定するとなぜかうまくいかない
+  locale.value = opts.lang;
+  if (!sheetsRef.value || !karnaughTableRef.value) return;
+  sheetsRef.value.forEach(_ => _.translateHeader())
+  karnaughTableRef.value.forEach(_ => {
+    _.updateMsg(t('表示言語を変更しました。'));
+  });
+}
+
+// 名前をimportにするとHTMLの方で呼び出す時にバグる
+async function loadFile(event) {
+  const getFileData = async (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsText(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  }
+  const file = (event.target.files || event.dataTransfer.files)[0];
+  try {
+    const json = await getFileData(file);
+    const save = JSON.parse(json);
+    projectName.value = save.config.projectName;
+    tabs.splice(0, tabs.length)
+    nextTick(() => {
+      const _tabs = JSON.parse(JSON.stringify(save.tabs));
+      _tabs.forEach((tab, idx) => {
+        tabs.push(tab)
       });
-    },
-  },
-  methods: {
-    export() {
-      const save = {};
-      this.tabs.forEach((tab) => {
-        tab.modified = false;
-      });
-      save.tabs = this.tabs;
-      save.config = {
-        projectName: this.projectName,
-      };
-      const blob = new Blob([JSON.stringify(save)], {
-        type: 'application/json',
-      });
-      saveAs(blob, `${this.projectName}.json`);
-    },
-    launageSetup() {
-      this.$i18n.locale = this.opts.lang;
-      this.tabs.forEach((tab, idx) => {
-        this.$refs.karnaughTable[idx].updateMsg(this.$t('表示言語を変更しました。'));
-      });
-    },
-    // 名前をimportにするとHTMLの方で呼び出す時にバグる
-    async loadFile(event) {
-      const getFileData = async (file) => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsText(file);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = (error) => reject(error);
-        });
-      };
-      const file = (event.target.files || event.dataTransfer.files)[0];
+    });
+  } catch (e) {
+    alert('ファイルを読み込めませんでした');
+    console.log(e);
+  }
+}
 
-      try {
-        const json = await getFileData(file);
-        const save = JSON.parse(json);
-        this.projectName = save.config.projectName;
-        this.tabs = [];
-        process.nextTick(() => {
-          this.tabs = JSON.parse(JSON.stringify(save.tabs));
-          this.tabs.forEach((tab, idx) => {
-            tab.show = false;
-            process.nextTick(() => (tab.show = true));
-            // レンダリングしていない要素がエラーとなるためイベントの伝播はしない方針にした
-            // this.$refs.karnaughTable[idx].import(save.child);
-          });
-        });
-      } catch (e) {
-        alert('ファイルを読み込めませんでした');
-        console.log(e);
-      }
-    },
-    grouped(event) {
-      this.activeTab.sheets.grp[event[0]] = event[1];
-    },
-    createTruthTable(inputNum, outputNum) {
-      const ret = {
-        headers: [],
-        body: [],
-        grp: [],
-        meta: {
-          inputNum,
-          outputNum,
-        },
-      };
-      ret.headers = [
-        ...range(inputNum).map((n) => `${this.$t('入力')}${n + 1}`),
-        ...range(outputNum).map((n) => `${this.$t('出力')}${n + 1}`),
-      ];
-      ret.body = [
-        [
-          ...range(inputNum).map((n) => String.fromCharCode(0x41 + n)), // a,b,c,...
-          ...range(outputNum).map((n) => String.fromCharCode(0x58 + n)), // x,y,z
-        ],
-        ...range(Math.pow(2, inputNum)).map((n) =>
-          n
-            .toString(2)
-            .padStart(inputNum, 0)
-            .padEnd(inputNum + outputNum, 1)
-            .split('')
-        ),
-      ];
+function grouped(event) {
+  activeTab.value.sheets.grp[event[0]] = event[1];
+}
 
-      return ret;
+function createTruthTable(inputNum, outputNum) {
+  const ret = {
+    headers: [],
+    body: [],
+    grp: [],
+    meta: {
+      inputNum,
+      outputNum,
     },
-    addTab() {
-      const nextId = this.tabs.reduce((acc, v) => (acc > v ? acc : v.id), -1) + 1;
-      const tabId = this.tabs.length;
-      let watchCount = 0;
-      this.tabs.push({
-        id: nextId,
-        show: true,
-        name: `work${nextId + 1}`,
-        sheetHeight: 500 + 'px',
-        sheets: this.createTruthTable(4, 1),
-        modified: true,
-      });
+  };
+  ret.headers = [
+    ...range(inputNum).map((n) => `${t('入力')}${n + 1}`),
+    ...range(outputNum).map((n) => `${t('出力')}${n + 1}`),
+  ];
+  ret.body = [
+    [
+      ...range(inputNum).map((n) => String.fromCharCode(0x41 + n)), // a,b,c,...
+      ...range(outputNum).map((n) => String.fromCharCode(0x58 + (n < 3 ? n : -(n - 2)))), // x,y,z,w,v,...
+    ],
+    ...range(Math.pow(2, inputNum)).map((n) =>
+      n
+        .toString(2)
+        .padStart(inputNum, 0)
+        .padEnd(inputNum + outputNum, 1)
+        .split('')
+    ),
+  ];
 
-      process.nextTick(() => {
-        this.tab = tabId;
-      });
-    },
-    tabDelete(id) {
-      const tabId = this.tabs.findIndex((_) => _.id === id);
-      this.tabs.splice(tabId, 1);
-    },
-    loadTable(id, table) {
-      // 更新の仕方がわからなかったので仕方なく再描画
-      const tabId = this.tabs.findIndex((_) => _.id === id);
-      this.tabs[tabId].sheets = table;
-      // const heightMap = ['0px', '0px', '180px', '280px', '500px'];
-      // this.tabs[tabId].sheetHeight = heightMap[this.tabs[tabId].sheets.meta.inputNum];
-      this.tabs[tabId].show = false;
-      process.nextTick(() => (this.tabs[tabId].show = true));
-      this.$refs.karnaughTable[0].reset();
-    },
-    changeInOut(id, inout, event) {
-      // 更新の仕方がわからなかったので仕方なく再描画
-      const tabId = this.tabs.findIndex((_) => _.id === id);
+  return ret;
+}
+function addTab() {
+  const nextId = tabs.reduce((acc, v) => (acc > v ? acc : v.id), -1) + 1;
+  const tabId = tabs.length;
+  tabs.push({
+    id: nextId,
+    name: `work${nextId + 1}`,
+    sheetHeight: 500 + 'px',
+    sheets: createTruthTable(4, 1),
+    modified: true,
+  });
 
-      const oldRows = this.tabs[tabId].sheets.body.length;
-      const oldCols = this.tabs[tabId].sheets.body[0].length;
-      const oldBody = this.tabs[tabId].sheets.body.slice();
-      const oldIn = this.tabs[tabId].sheets.meta.inputNum;
-      const oldOut = this.tabs[tabId].sheets.meta.outputNum;
+  nextTick(() => {
+    tab.value = tabId;
+  });
+}
 
-      if (inout === 'input') {
-        this.tabs[tabId].sheets.meta.inputNum = event;
-      } else {
-        this.tabs[tabId].sheets.meta.outputNum = event;
-      }
+function deleteTab(id) {
+  const tabId = tabs.findIndex((_) => _.id === id);
+  tabs.splice(tabId, 1);
+  tab.value = tabs.find(_ => _.id)
+}
 
-      this.tabs[tabId].sheets = this.createTruthTable(
-        this.tabs[tabId].sheets.meta.inputNum,
-        this.tabs[tabId].sheets.meta.outputNum
-      );
-      // headerを引き継ぐ
-      for (let i = 0; i < this.tabs[tabId].sheets.meta.inputNum; i++) {
-        if (i < oldIn) this.tabs[tabId].sheets.body[0][i] = oldBody[0][i];
-        else this.tabs[tabId].sheets.body[0][i] = String.fromCharCode(0x41 + i);
-      }
-
-      // 出力の数が変化している場合は過去の出力を引き継ぐ
-      if (oldOut !== this.tabs[tabId].sheets.meta.outputNum) {
-        const outIdx = this.tabs[tabId].sheets.meta.inputNum;
-        for (let i = outIdx; i < oldCols; i++) {
-          range(oldRows).forEach((row) => {
-            this.tabs[tabId].sheets.body[row][i] = oldBody[row][i];
-          });
-        }
-      }
-
-      const heightMap = ['0px', '0px', '180px', '280px', '500px'];
-      this.tabs[tabId].sheetHeight = heightMap[this.tabs[tabId].sheets.meta.inputNum];
-      this.tabs[tabId].show = false;
-      process.nextTick(() => (this.tabs[tabId].show = true));
-      // 出力が変化していた場合「以外」にカルノー図の状態をリセットする
-      if (oldOut === this.tabs[tabId].sheets.meta.outputNum) {
-        this.$refs.karnaughTable[this.tab].reset();
-      }
-    },
-    changeCell(id, e) {
-      if (!e) return;
-      // console.log(e);
-      const tabId = this.tabs.findIndex((_) => _.id === id);
-      const [y, x, old, v] = e;
-      let nextRow = [...this.tabs[tabId].sheets.body[y]];
-      // 入出力ラベルは2文字以上を許可
-      if (y === 0) {
-        nextRow[x] = v || old;
-      } else {
-        nextRow[x] = (v && v[0]) || old;
-      }
-
-      this.tabs[tabId].sheets.body.splice(y, 1, nextRow);
-      this.tabs[tabId].modified = true;
-      this.$refs.karnaughTable[0].changeCell(e[1] - this.tabs[tabId].sheets.meta.inputNum);
-    },
-    confirmSave(event) {
-      if (this.tabs.some((_) => _.modified)) {
-        event.returnValue = '編集を保存せずにページを離れようとしています。このまま移動しますか？';
-        return '編集を保存せずにページを離れようとしています。このまま移動しますか？';
-      }
-    },
-  },
-  watch: {
-    opts: {
-      handler: function (newVal, oldVal) {
-        Object.entries(this.opts).forEach((([k, v]) => localStorage.setItem(k, v)))
-      },
-      // deepがfalseだとオブジェクト内の値が変更されても処理が実行されない
-      deep: true,
+function changeInOut(id, inout, event) {
+  const tabId = tabs.findIndex((_) => _.id === id);
+  const oldBody = tabs[tabId].sheets.body;
+  const { inputNum, outputNum } = tabs[tabId].sheets.meta;
+  tabs[tabId].sheets = createTruthTable(inputNum, outputNum);
+  // 出力の数が変わった場合は過去の情報を引き継ぐ
+  if (inout === 'output') {
+    for (let i = 0; i < inputNum; i++) {
+      tabs[tabId].sheets.body[0][i] = oldBody[0][i]
     }
-  },
-  mounted() {
-    Object.keys(this.opts).forEach((k => {
-      if (localStorage.getItem(k)) this.opts[k] = localStorage.getItem(k);
-    }))
-    this.launageSetup();
-    this.addTab();
-    this.tabs.forEach((_) => (_.modified = false));
-    window.addEventListener('beforeunload', this.confirmSave);
-  },
-};
+    const restoreCol = Math.min(inputNum + outputNum, oldBody[0].length)
+    for (let i = inputNum; i < restoreCol; i++) {
+      range(oldBody.length).forEach((row) => {
+        tabs[tabId].sheets.body[row][i] = oldBody[row][i];
+      });
+    }
+  }
+
+  const heightMap = ['0px', '0px', '180px', '280px', '500px'];
+  tabs[tabId].sheetHeight = heightMap[tabs[tabId].sheets.meta.inputNum];
+  // 出力が変化していた場合「以外」にカルノー図の状態をリセットする
+  // if (oldOut === tabs[tabId].sheets.meta.outputNum) {
+  // karnaughTable[tab].reset(); // TODO
+  // }
+}
+
+function changeCell(id, e) {
+  if (!e) return;
+  // console.log(id, e);
+  const tabId = tabs.findIndex((_) => _.id === id);
+  const [y, x, old, v] = e;
+  let nextRow = [...tabs[tabId].sheets.body[y]];
+  // 入出力ラベルは2文字以上を許可
+  if (y === 0) {
+    nextRow[x] = v || old;
+  } else {
+    nextRow[x] = (v && v[0]) || old;
+  }
+
+  tabs[tabId].sheets.body.splice(y, 1, nextRow);
+  tabs[tabId].modified = true;
+  karnaughTableRef.value[0].changeCell(e[1] - tabs[tabId].sheets.meta.inputNum);
+}
+
+function confirmSave(event) {
+  if (tabs.some((_) => _.modified)) {
+    event.returnValue = '編集を保存せずにページを離れようとしています。このまま移動しますか？';
+    return '編集を保存せずにページを離れようとしています。このまま移動しますか？';
+  }
+}
+
+watch(opts, (newVal, oldVal) => {
+  Object.entries(opts).forEach((([k, v]) => localStorage.setItem(k, v)))
+})
+
+onMounted(() => {
+  Object.keys(opts).forEach((k => {
+    if (localStorage.getItem(k)) opts[k] = localStorage.getItem(k);
+  }))
+  languageSetup();
+  addTab();
+  tabs.forEach((_) => (_.modified = false));
+  window.addEventListener('beforeunload', confirmSave);
+})
 </script>
 
 <style>
 #app {
   background-color: #f9fafb;
-}
-
-.theme--light.v-tabs-items {
-  background-color: inherit !important;
 }
 
 .margin-initial {
@@ -385,12 +342,12 @@ export default {
   align-items: normal !important;
 }
 
-.inout {
-  margin-top: 12px;
+.inout-f {
+  margin-left: 24px !important;
 }
 
-.v-toolbar__title {
-  font-size: 1.6rem;
+.v-toolbar-title .v-field {
+  font-size: 1.4rem;
 }
 
 .sheets {
@@ -400,16 +357,12 @@ export default {
   flex-basis: 30%;
 }
 
-.v-tab {
-  text-transform: none !important;
-}
-
-.v-menu__content {
-  z-index: 161 !important;
-}
-
 .v-select {
   min-width: 72px !important;
+}
+
+.v-list-item__prepend {
+  margin-right: -16px;
 }
 
 .v-select .v-text-field__details {
@@ -424,11 +377,24 @@ export default {
   margin-top: 24px !important;
 }
 
+.v-tab {
+  text-transform: none !important;
+}
+
+.theme--light.v-tabs-items {
+  background-color: inherit !important;
+}
+
 .v-tabs-slider-wrapper+.v-tab {
   margin-left: 0px !important;
 }
 
-div[role='tab'] div .v-btn--icon {
+
+.v-tab .mdi-close {
+  font-size: 16px !important;
+}
+
+button[role='tab'] div .v-btn--icon {
   height: 24px !important;
   width: 24px !important;
   min-height: 24px !important;
@@ -451,23 +417,27 @@ div[role='tab'] div .v-btn--icon {
   opacity: 0;
 }
 
-div[role='menu'] .v-list {
-  background-color: #000000b5;
+.optMenu .v-list {
+  background-color: #000000b5 !important;
 }
 
-div[role='menu'] .v-list-item__title {
-  color: #e1e1e1;
+.optMenu .v-list-subheader {
+  background-color: transparent !important;
+}
+
+.optMenu .v-list-item-title {
+  color: #e1e1e1 !important;
   cursor: pointer;
 }
 
-div[role='menu'] .v-list i {
-  margin-right: 8px;
-  color: #e1e1e1;
+.optMenu .v-list i,
+.optMenu .v-list .v-list-subheader__text,
+.optMenu .v-list label {
+  color: #e1e1e1 !important;
 }
 
-div[role='menu'] .v-list label {
-  margin-right: 8px;
-  color: #e1e1e1;
+.optMenu .v-switch__track {
+  background-color: gray;
 }
 
 .import input[type='file'] {

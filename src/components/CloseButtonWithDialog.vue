@@ -1,9 +1,9 @@
 <template>
   <v-row justify="center">
-    <v-dialog v-model="dialog" max-width="290">
-      <template v-slot:activator="{ on, attrs }">
-        <v-btn icon v-bind="attrs" v-on="on">
-          <div @click="customOn($event)">
+    <v-dialog v-model="dialog" max-width="400" min-width="240">
+      <template v-slot:activator="{ props }">
+        <v-btn icon v-bind="props">
+          <div @click=" customOn($event)">
             <v-icon small>mdi-close</v-icon>
           </div>
         </v-btn>
