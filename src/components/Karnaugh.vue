@@ -565,7 +565,6 @@ function autoGrouping() {
       return [ch2idx[xl], rh2idx[yl]];
     })
   );
-  // console.log(ch2idx, rh2idx);
 
   const acc3 = acc2.filter((_) => isAllNeighbor(_));
   // 同じ要素を含んでいるものを削除。ドントケアは無視する。
@@ -676,7 +675,7 @@ function save(ext) {
       link.click();
     };
     image.onerror = (error) => {
-      console.log(error);
+      console.error(error);
     };
     image.src = 'data:image/svg+xml;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(svgString)));
   } else if (ext === 'svg') {
@@ -749,7 +748,6 @@ function regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
   ));
 }
 onMounted(() => {
-  console.log('mounted' + tableData.value.outName);
   Object.assign(group, tableData.value.grp || []);
 })
 watch(group_, () => { emit('grouped', [tableData.value.outIdx, group_]); })

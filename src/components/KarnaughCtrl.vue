@@ -79,7 +79,7 @@ const props = defineProps({
   },
 })
 const emit = defineEmits(["grouped"])
-defineExpose({ changeCell, updateMsg })
+defineExpose({ changeCell, updateMsg, reset })
 
 const optExport = [
   { title: 'PNG保存', icon: 'mdi-download', handlar: () => save('png') },

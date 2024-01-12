@@ -58,7 +58,7 @@
 
     <!-- タブの中身 -->
     <v-window v-model="tab">
-      <v-window-item v-for="tab in tabs" :key="tab.id">
+      <v-window-item v-for="(tab, idx) in tabs" :key="tab.id">
         <v-container class="grey-lighten-5 margin-initial">
           <v-row>
             <v-col class="d-flex" cols="3">
@@ -68,18 +68,19 @@
             </v-col>
             <v-col class="d-flex inout inout-f" cols="3">
               <v-select :items="[2, 3, 4]" variant="outlined" v-model="tab.sheets.meta.inputNum" label="Inputs"
-                @update:modelValue="changeInOut(tab.id, 'input', $event)"></v-select>
+                @update:modelValue="changeInOut(tab.id, 'input', $event, idx)"></v-select>
             </v-col>
             <v-col class="d-flex inout" cols="3">
               <v-select :items="[1, 2, 3, 4]" variant="outlined" v-model="tab.sheets.meta.outputNum" label="Outputs"
-                @update:modelValue="changeInOut(tab.id, 'output', $event)"></v-select>
+                @update:modelValue="changeInOut(tab.id, 'output', $event, idx)"></v-select>
             </v-col>
           </v-row>
 
           <v-row>
             <v-col cols="12" sm="6" class="sheets" :style="{ height: tab.sheetHeight }">
               <transition name="toggle-fade">
-                <MySheets :tableData="tab.sheets" @changeCell="changeCell(tab.id, $event)" ref="sheetsRef"></MySheets>
+                <MySheets :tableData="tab.sheets" @changeCell="changeCell(tab.id, $event, idx)" ref="sheetsRef">
+                </MySheets>
               </transition>
             </v-col>
             <v-col cols="12" sm="6" class="karnaughTable">
@@ -137,7 +138,7 @@ const karnaughTable = computed(() => {
     ret.headers = tab.sheets.body[0].slice(0, ret.inputNum);
     ret.outName = tab.sheets.body[0][ret.inputNum + idx];
     ret.body = tab.sheets.body.filter((_, idx) => idx !== 0);
-    ret.key = ret.outName + idx;
+    ret.key = tab.id + ret.outName + idx;
     ret.grp = tab.sheets.grp[idx];
     ret.outIdx = idx; // bodyを分けほうがよかったかもしれない
     return ret;
@@ -193,7 +194,7 @@ async function loadFile(event) {
     });
   } catch (e) {
     alert('ファイルを読み込めませんでした');
-    console.log(e);
+    console.error(e);
   }
 }
 
@@ -253,7 +254,7 @@ function deleteTab(id) {
   tab.value = tabs.find(_ => _.id)
 }
 
-function changeInOut(id, inout, event) {
+function changeInOut(id, inout, event, idx) {
   const tabId = tabs.findIndex((_) => _.id === id);
   const oldBody = tabs[tabId].sheets.body;
   const { inputNum, outputNum } = tabs[tabId].sheets.meta;
@@ -274,14 +275,13 @@ function changeInOut(id, inout, event) {
   const heightMap = ['0px', '0px', '180px', '280px', '500px'];
   tabs[tabId].sheetHeight = heightMap[tabs[tabId].sheets.meta.inputNum];
   // 出力が変化していた場合「以外」にカルノー図の状態をリセットする
-  // if (oldOut === tabs[tabId].sheets.meta.outputNum) {
-  // karnaughTable[tab].reset(); // TODO
-  // }
+  if (inout !== 'output') {
+    karnaughTableRef.value[idx].reset();
+  }
 }
 
-function changeCell(id, e) {
+function changeCell(id, e, idx) {
   if (!e) return;
-  // console.log(id, e);
   const tabId = tabs.findIndex((_) => _.id === id);
   const [y, x, old, v] = e;
   let nextRow = [...tabs[tabId].sheets.body[y]];
@@ -294,7 +294,7 @@ function changeCell(id, e) {
 
   tabs[tabId].sheets.body.splice(y, 1, nextRow);
   tabs[tabId].modified = true;
-  karnaughTableRef.value[0].changeCell(e[1] - tabs[tabId].sheets.meta.inputNum);
+  karnaughTableRef.value[idx].changeCell(e[1] - tabs[tabId].sheets.meta.inputNum);
 }
 
 function confirmSave(event) {
