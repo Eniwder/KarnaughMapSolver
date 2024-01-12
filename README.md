@@ -6,6 +6,8 @@
 # カルノー図の作成を補助するツール
 https://eniwder.github.io/KarnaughMapSolver/index.html
 
+## 機能改修中のためバグってるかもしれません。バグってたら教えてください！！
+
 ## 使い方
 説明しなくても大体分かると思います。
 
