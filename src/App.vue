@@ -67,12 +67,12 @@
               </v-text-field>
             </v-col>
             <v-col class="d-flex inout inout-f" cols="3">
-              <v-select :items="[2, 3, 4, 5, 6]" variant="outlined" v-model="tab.sheets.meta.inputNum" label="Inputs"
+              <v-select :items="[2, 3, 4]" variant="outlined" v-model="tab.sheets.meta.inputNum" label="Inputs"
                 @update:modelValue="changeInOut(tab.id, 'input', $event)"></v-select>
             </v-col>
             <v-col class="d-flex inout" cols="3">
-              <v-select :items="[1, 2, 3, 4, 5, 6, 7, 8, 9]" variant="outlined" v-model="tab.sheets.meta.outputNum"
-                label="Outputs" @update:modelValue="changeInOut(tab.id, 'output', $event)"></v-select>
+              <v-select :items="[1, 2, 3, 4]" variant="outlined" v-model="tab.sheets.meta.outputNum" label="Outputs"
+                @update:modelValue="changeInOut(tab.id, 'output', $event)"></v-select>
             </v-col>
           </v-row>
 
