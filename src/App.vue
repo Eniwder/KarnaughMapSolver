@@ -70,13 +70,13 @@
                 </v-text-field>
               </v-responsive>
             </v-col>
-            <v-col class="d-flex inout" cols="3">
-              <v-select :items="[2, 3, 4]" variant="outlined" v-model="tab.sheets.meta.inputNum" label="Inputs"
-                @update:modelValue="changeInOut(tab.id, 'input', $event, idx)"></v-select>
+            <v-col class="d-flex inout" cols="2">
+              <v-select :items="[2, 3, 4]" variant="outlined" density="compact" v-model="tab.sheets.meta.inputNum"
+                label="Inputs" @update:modelValue="changeInOut(tab.id, 'input', $event, idx)"></v-select>
             </v-col>
-            <v-col class="d-flex inout" cols="3">
-              <v-select :items="[1, 2, 3, 4]" variant="outlined" v-model="tab.sheets.meta.outputNum" label="Outputs"
-                @update:modelValue="changeInOut(tab.id, 'output', $event, idx)"></v-select>
+            <v-col class="d-flex inout" cols="2">
+              <v-select :items="[1, 2, 3, 4]" variant="outlined" density="compact" v-model="tab.sheets.meta.outputNum"
+                label="Outputs" @update:modelValue="changeInOut(tab.id, 'output', $event, idx)"></v-select>
             </v-col>
           </v-row>
 
@@ -370,6 +370,10 @@ onMounted(() => {
 
 .v-select .v-text-field__details {
   display: none !important;
+}
+
+.v-select .v-field__field {
+  margin-top: 6px;
 }
 
 .col {
