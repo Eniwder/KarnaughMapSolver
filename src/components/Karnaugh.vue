@@ -160,7 +160,7 @@ const inNameOffset = computed(() => {
   const rowLabel = range(rowIn.value).map((i) => tableData.value.headers[i + colIn.value]).join('');
   if (Math.max(colLabel.length, rowLabel.length) <= 2) return 0;
   const ctx = document.createElement('canvas').getContext('2d');
-  ctx.font = `${fontLabelSize}px "${fontFamily}"`;
+  ctx.font = `${fontLabelSize}px "${fontInFam}"`;
   let maxLen = Math.max(ctx.measureText(colLabel).width, ctx.measureText(rowLabel).width);
   maxLen = maxLen + parseInt(maxLen / 30) * 50
   return parseInt(maxLen);
