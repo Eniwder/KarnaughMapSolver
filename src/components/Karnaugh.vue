@@ -60,7 +60,7 @@ import { reactive, defineProps, computed, onMounted, watch, defineEmits, nextTic
 import { useI18n } from "vue-i18n";
 const { t } = useI18n({ useScope: "global" });
 const emit = defineEmits(['msg', 'grouped'])
-defineExpose({ deselection, grouping, autoGrouping, reset })
+defineExpose({ deselection, grouping, autoGrouping, reset, save })
 
 const range = (n) => [...Array(n).keys()];
 const size = 360;
