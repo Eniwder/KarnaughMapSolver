@@ -1,12 +1,12 @@
-import App from './App.vue'
+import App from './App.vue';
 import i18n from "./i18n";
-import { registerPlugins } from '@/plugins'
-import { createApp } from 'vue'
+import { registerPlugins } from '@/plugins';
+import { createApp } from 'vue';
 
-const app = createApp(App)
+const app = createApp(App);
 
-registerPlugins(app)
-app.use(i18n)
+registerPlugins(app);
+app.use(i18n);
 
 app.mount('#app')
 

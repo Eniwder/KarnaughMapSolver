@@ -16,9 +16,7 @@
           <v-list-item prepend-icon="mdi-upload" @click="">
             <label class="import">
               <v-list-item-title>
-                <input type="file" accept="application/json" @change="loadFile($event)" />{{
-                  $t('ファイルを読み込み')
-                }}
+                <input type="file" accept="application/json" @change="loadFile($event)" />{{ $t('ファイルを読み込み') }}
               </v-list-item-title>
             </label>
           </v-list-item>
@@ -68,12 +66,13 @@
               </v-responsive>
             </v-col>
             <v-col class="d-flex inout" cols="2">
-              <v-select :items="[2, 3, 4]" variant="outlined" density="compact" v-model="tab.sheets.meta.inputNum"
+              <v-select :items="[2, 3, 4, 5, 6]" variant="outlined" density="compact" v-model="tab.sheets.meta.inputNum"
                 label="Inputs" @update:modelValue="changeInOut(tab.id, 'input', $event, idx)"></v-select>
             </v-col>
             <v-col class="d-flex inout" cols="2">
-              <v-select :items="[1, 2, 3, 4]" variant="outlined" density="compact" v-model="tab.sheets.meta.outputNum"
-                label="Outputs" @update:modelValue="changeInOut(tab.id, 'output', $event, idx)"></v-select>
+              <v-select :items="[1, 2, 3, 4, 5, 6, 7, 8, 9]" variant="outlined" density="compact"
+                v-model="tab.sheets.meta.outputNum" label="Outputs"
+                @update:modelValue="changeInOut(tab.id, 'output', $event, idx)"></v-select>
             </v-col>
           </v-row>
 
@@ -97,9 +96,11 @@ import MySheets from './components/MySheets.vue';
 import KarnaughCtrl from './components/KarnaughCtrl.vue';
 import CloseButton from './components/CloseButtonWithDialog.vue';
 import { saveAs } from 'file-saver';
-import { reactive, ref, watch, onMounted, computed, nextTick } from 'vue'
+import { reactive, ref, watch, onMounted, computed, nextTick } from 'vue';
+import { useComputedReactive } from './composables/useComputedReactive';
 import { useI18n } from "vue-i18n";
 const { t, locale } = useI18n({ useScope: "global" });
+const { computedReactive } = useComputedReactive();
 
 const range = (n) => [...Array(n).keys()];
 Array.prototype.zip = function (...args) {
@@ -113,7 +114,7 @@ Array.prototype.zip = function (...args) {
 const optMenu = [
   { title: t('ファイルへ保存'), icon: 'mdi-download', handlar: exportProject },
   // { title: 'ファイルを読み込み', handlar: loadFile },
-]
+];
 
 // TODO 消したタブを戻せる
 // TODO github flow (electron build)
@@ -121,28 +122,34 @@ const optMenu = [
 const projectName = ref('Project1');
 const tab = ref(0);
 const tabs = reactive([]);
+addTab();
 const karnaughTableRef = ref(null);
-const sheetsRef = ref(null)
+const sheetsRef = ref(null);
 
 const opts = reactive({
   lang: window.navigator.language.startsWith('ja') ? 'ja' : 'en'
-})
-const activeTab = computed(() => tabs[tab.value])
+});
+const activeTab = computedReactive(() => tabs[tab.value]);
 const karnaughTable = computed(() => {
-  if (!activeTab.value) return {};
-  return range(activeTab.value.sheets.meta.outputNum).map((idx) => {
+  if (!activeTab) return {};
+  return range(activeTab.sheets.meta.outputNum).map((idx) => {
     const ret = {};
-    const tab = activeTab.value;
+    const tab = activeTab;
     ret.inputNum = tab.sheets.meta.inputNum;
     ret.headers = tab.sheets.body[0].slice(0, ret.inputNum);
     ret.outName = tab.sheets.body[0][ret.inputNum + idx];
     ret.body = tab.sheets.body.filter((_, idx) => idx !== 0);
     ret.key = tab.id + ret.outName + idx;
-    ret.grp = tab.sheets.grp[idx];
+    ret.groups = tab.sheets.groups?.[idx] || [{
+      grp: [[]],
+      rowGrp: [[]],// 5入力の時に使われる横で共通するグループ
+      colGrp: [[]],// 6入力の時に使われる縦で共通するグループ
+      allGrp: [[]]// 6入力の時に使われる全てで共通するグループ
+    }];
     ret.outIdx = idx; // bodyを分けほうがよかったかもしれない
     return ret;
   });
-})
+});
 
 function exportProject() {
   const save = {};
@@ -160,13 +167,15 @@ function exportProject() {
 }
 
 function languageSetup() {
+  if (!sheetsRef.value || !karnaughTableRef.value) return;
+  if (locale.value !== opts.lang) {
+    karnaughTableRef.value.forEach(_ => {
+      _.updateMsg(t('表示言語を変更しました。'));
+    });
+  }
   // localeを直接v-modelに指定するとなぜかうまくいかない
   locale.value = opts.lang;
-  if (!sheetsRef.value || !karnaughTableRef.value) return;
-  sheetsRef.value.forEach(_ => _.translateHeader())
-  karnaughTableRef.value.forEach(_ => {
-    _.updateMsg(t('表示言語を変更しました。'));
-  });
+  sheetsRef.value.forEach(_ => _.translateHeader());
 }
 
 // 名前をimportにするとHTMLの方で呼び出す時にバグる
@@ -178,17 +187,17 @@ async function loadFile(event) {
       reader.onload = () => resolve(reader.result);
       reader.onerror = (error) => reject(error);
     });
-  }
+  };
   const file = (event.target.files || event.dataTransfer.files)[0];
   try {
     const json = await getFileData(file);
     const save = JSON.parse(json);
     projectName.value = save.config.projectName;
-    tabs.splice(0, tabs.length)
+    tabs.splice(0, tabs.length);
     nextTick(() => {
       const _tabs = JSON.parse(JSON.stringify(save.tabs));
       _tabs.forEach((tab, idx) => {
-        tabs.push(tab)
+        tabs.push(tab);
       });
     });
   } catch (e) {
@@ -198,14 +207,27 @@ async function loadFile(event) {
 }
 
 function grouped(event) {
-  activeTab.value.sheets.grp[event[0]] = event[1];
+  console.log("here", event);
+  const { oidx, grp, rowGrp, colGrp, allGrp, kidx } = event;
+  // Object.keys(activeTab.sheets.groups).forEach(k => {
+  //   if (event[k]) activeTab.sheets.groups[oidx][k][kidx] = event[k];
+  // });
+  //   if (grp) activeTab.sheets.grp[oidx][kidx] = grp;
+  //   if (rowGrp) activeTab.sheets.rowGrp[oidx][kidx] = rowGrp;
+  //   if (colGrp) activeTab.sheets.colGrp[oidx][kidx] = colGrp;
+  //   if (allGrp) activeTab.sheets.allGrp[oidx][kidx] = allGrp;
 }
 
 function createTruthTable(inputNum, outputNum) {
   const ret = {
     headers: [],
     body: [],
-    grp: [],
+    // groups: [{
+    //   grp: [[]],
+    //   rowGrp: [[]],
+    //   colGrp: [[]],
+    //   allGrp: [[]],
+    // }],
     meta: {
       inputNum,
       outputNum,
@@ -241,7 +263,6 @@ function addTab() {
     sheets: createTruthTable(4, 1),
     modified: true,
   });
-
   // nextTickだと真理値表がレンダリングされる前？なのでその対策
   setTimeout(() => {
     tab.value = tabId;
@@ -251,7 +272,7 @@ function addTab() {
 function deleteTab(id) {
   const tabId = tabs.findIndex((_) => _.id === id);
   tabs.splice(tabId, 1);
-  tab.value = tabs.find(_ => _.id)
+  tab.value = tabs.find(_ => _.id);
 }
 
 function changeInOut(id, inout, event, idx) {
@@ -262,9 +283,9 @@ function changeInOut(id, inout, event, idx) {
   // 出力の数が変わった場合は過去の情報を引き継ぐ
   if (inout === 'output') {
     for (let i = 0; i < inputNum; i++) {
-      tabs[tabId].sheets.body[0][i] = oldBody[0][i]
+      tabs[tabId].sheets.body[0][i] = oldBody[0][i];
     }
-    const restoreCol = Math.min(inputNum + outputNum, oldBody[0].length)
+    const restoreCol = Math.min(inputNum + outputNum, oldBody[0].length);
     for (let i = inputNum; i < restoreCol; i++) {
       range(oldBody.length).forEach((row) => {
         tabs[tabId].sheets.body[row][i] = oldBody[row][i];
@@ -276,7 +297,7 @@ function changeInOut(id, inout, event, idx) {
     }
   }
 
-  const heightMap = ['0px', '0px', '180px', '280px', '500px'];
+  const heightMap = ['0px', '0px', '180px', '280px', '500px', '900px', '1800px'];
   tabs[tabId].sheetHeight = heightMap[tabs[tabId].sheets.meta.inputNum];
   // 出力が変化していた場合「以外」にカルノー図の状態をリセットする
   if (inout !== 'output') {
@@ -309,18 +330,17 @@ function confirmSave(event) {
 }
 
 watch(opts, (newVal, oldVal) => {
-  Object.entries(opts).forEach((([k, v]) => localStorage.setItem(k, v)))
-})
+  Object.entries(opts).forEach((([k, v]) => localStorage.setItem(k, v)));
+});
 
 onMounted(() => {
   Object.keys(opts).forEach((k => {
     if (localStorage.getItem(k)) opts[k] = localStorage.getItem(k);
-  }))
+  }));
   languageSetup();
-  addTab();
   tabs.forEach((_) => (_.modified = false));
   window.addEventListener('beforeunload', confirmSave);
-})
+});
 </script>
 
 <style>
@@ -351,10 +371,10 @@ onMounted(() => {
 }
 
 .sheets {
-  /* height: 500px; */
-  max-height: 600px;
+  height: 500px;
+  max-height: 1000px;
   min-width: 400px;
-  flex-basis: 30%;
+  flex-basis: content;
 }
 
 .v-select {

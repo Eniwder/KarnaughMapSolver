@@ -5,14 +5,13 @@
 <script setup>
 import { HotTable } from '@handsontable/vue3';
 import { reactive, computed } from 'vue';
-import { defineProps, ref, defineEmits, watch, nextTick, defineExpose } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { registerAllModules } from 'handsontable/registry';
 import { useI18n } from "vue-i18n";
-const { t } = useI18n({ useScope: "global" });
 registerAllModules();
-defineExpose({ translateHeader })
-const emit = defineEmits(["changeCell"])
-const _hotTable = ref(null)
+defineExpose({ translateHeader });
+const emit = defineEmits(["changeCell"]);
+const _hotTable = ref(null);
 
 const range = (n) => [...Array(n).keys()];
 const props = defineProps({
@@ -24,7 +23,7 @@ const props = defineProps({
     headers: [],
     body: [],
   },
-})
+});
 const tableData = reactive(props.tableData);
 const totalCol = computed(() => tableData.meta.inputNum + tableData.meta.outputNum);
 const cellSetting = computed(() =>
@@ -42,7 +41,7 @@ const cellSetting = computed(() =>
       readOnly: (n % totalCol.value) < tableData.meta.inputNum,
     })),
   ]
-)
+);
 const customBordersSetting = computed(() =>
   [
     {
@@ -86,14 +85,14 @@ const customBordersSetting = computed(() =>
       },
     },
   ]
-)
+);
 
 const hotSettings = reactive({
   licenseKey: 'non-commercial-and-evaluation',
   data: tableData.body,
   colHeaders: tableData.headers,
   afterRenderer() {
-    setThColor()
+    setThColor();
   },
   afterChange(e) {
     // 同時に編集したセルが配列で全て渡される
@@ -107,7 +106,7 @@ const hotSettings = reactive({
   rowHeights: 24,
   cell: cellSetting,
   customBorders: customBordersSetting
-})
+});
 
 
 function changeCell(e) {
@@ -116,12 +115,12 @@ function changeCell(e) {
 
 function setThColor() {
   function helper() {
-    const th = _hotTable.value.$el.querySelectorAll(`th[aria-colindex="${tableData.meta.inputNum + 1}"]`)
+    const th = _hotTable.value.$el.querySelectorAll(`th[aria-colindex="${tableData.meta.inputNum + 1}"]`);
     if (!th[1]) return false;
     th[1].style.borderLeft = '2px solid lightgray'; // 何故か2個あって後者にスタイルが必要
     return true;
   }
-  nextTick(() => helper())
+  nextTick(() => helper());
 }
 
 function translateHeader() {
@@ -135,7 +134,7 @@ function translateHeader() {
 }
 
 watch(() => props.tableData, (val) => {
-  Object.assign(tableData, val)
+  Object.assign(tableData, val);
   hotSettings.data = tableData.body;
   hotSettings.colHeaders = tableData.headers;
   _hotTable.value.hotInstance.loadData(hotSettings);

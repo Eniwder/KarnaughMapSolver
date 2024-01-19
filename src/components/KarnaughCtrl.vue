@@ -34,9 +34,9 @@
         <v-window v-model="selectedTab">
           <v-window-item v-for="table in props.tables" :key="table.key" ref="tabItem">
             <v-card>
-              <Karnaugh :_tableData="table" :optView="optViewProps" @msg="updateMsg($event)" @grouped="grouped($event)"
-                ref="karnaughs">
-              </Karnaugh>
+              <KarnaughMaster :_tableData="table" :optView="optViewProps" @msg="updateMsg($event)"
+                @grouped="grouped($event)" ref="karnaughs">
+              </KarnaughMaster>
             </v-card>
           </v-window-item>
         </v-window>
@@ -62,9 +62,9 @@
   </div>
 </template>
 <script setup>
-import Karnaugh from './Karnaugh.vue';
-import { ref, reactive, defineProps, defineEmits, onMounted, computed, watch } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue';
 import { useI18n } from "vue-i18n";
+import KarnaughMaster from './KarnaughMaster.vue';
 const { t } = useI18n({ useScope: "global" });
 
 const props = defineProps({
@@ -75,18 +75,23 @@ const props = defineProps({
     },
     headers: [],
     body: [],
-    grp: [],
+    groups: [{
+      grp: [[]],
+      rowGrp: [[]],
+      colGrp: [[]],
+      allGrp: [[]],
+    }]
   },
-})
-const emit = defineEmits(["grouped"])
-defineExpose({ changeCell, updateMsg, reset, deletedTab })
+});
+const emit = defineEmits(["grouped"]);
+defineExpose({ changeCell, updateMsg, reset, deletedTab });
 
 const optExport = [
   { title: 'PNG保存', icon: 'mdi-download', handlar: () => save('png') },
   { title: 'SVG保存', icon: 'mdi-download', handlar: () => save('svg') },
-]
+];
 
-const msg = ref(t('まずは真理値表を編集。0,1以外はドントケア扱い。'))
+const msg = ref(t('まずは真理値表を編集。0,1以外はドントケア扱い。'));
 const changed = reactive([]);
 const selectedTab = ref(0);
 const tabItem = ref(null);
@@ -105,7 +110,7 @@ const optView = reactive([
     value: false,
     disc: t('3変数の時に入力の区切り位置を変更します。'),
   },
-])
+]);
 
 const tabItems = computed(() => {
   if (!props.tables.map) return [];
@@ -113,11 +118,9 @@ const tabItems = computed(() => {
     name: t.outName,
     key: `tb${t.outName}${idx}`,
   }));
-})
+});
 
-const activeKarnaugh = computed(() => {
-  return karnaughs.value[selectedTab.value];
-})
+const activeKarnaugh = computed(() => karnaughs.value[selectedTab.value]);
 
 const optViewProps = computed(() => {
   return Object.entries(optView).reduce((acc, [k, v]) => {
@@ -125,7 +128,7 @@ const optViewProps = computed(() => {
     acc[v.key] = v.value;
     return acc;
   }, {});
-})
+});
 
 function exportData() {
   props.tables.modified = false;
@@ -196,8 +199,7 @@ function deletedTab(n) {
 
 onMounted(() => {
   selectedTab.value = 0;
-})
-
+});
 </script>
 
 <style scoped>
