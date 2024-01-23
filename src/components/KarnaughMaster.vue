@@ -1,6 +1,24 @@
 <template>
   <div class="karnaugh">
     <svg :width="svgWidth" :height="svgHeight" ref="svgRootRef">
+      <template v-if="tableData.inputNum > 4">
+        <text :x="kvi.dimColHeaderLabel.x" :y="kvi.dimColHeaderLabel.y" :font-size="kvi.fontInSize"
+          :font-family="kvi.fontLabelSize" text-anchor="middle" dominant-baseline="central" fill="black">
+          {{ kvi.dimColHeaderLabel.v }} </text>
+        <text v-for="v in kvi.dimColHeader" :x="v.x" :y="v.y" text-anchor="middle" dominant-baseline="central"
+          fill="black" :font-size="kvi.fontInSize">{{
+            v.v }}</text>
+      </template>
+      <template v-if="tableData.inputNum > 5">
+        <line :x1="kvi.padding + 8" :y1="kvi.padding + 8" :x2="offsets[0].x" :y2="offsets[0].y" stroke="black"
+          stroke-width="1" />
+        <text :x="kvi.dimRowHeaderLabel.x" :y="kvi.dimRowHeaderLabel.y" :font-size="kvi.fontInSize"
+          :font-family="kvi.fontLabelSize" text-anchor="middle" dominant-baseline="central" fill="black">
+          {{ kvi.dimRowHeaderLabel.v }}
+        </text>
+        <text v-for="v in kvi.dimRowHeader" :x="v.x" :y="v.y" text-anchor="middle" dominant-baseline="central"
+          fill="black" :font-size="kvi.fontInSize">{{ v.v }}</text>
+      </template>
       <KarnaughChild v-for="(v, idx) in subTables" :tableData="v" :offset="offsets[idx]" :idx="idx" :key="idx"
         ref="karnaughChildRef">
       </KarnaughChild>
@@ -51,6 +69,8 @@ const props = defineProps({
 const figureMargin = 16;
 const svgRootRef = ref(null);
 const karnaughChildRef = ref(null);
+// subTablesが再計算されるたびにグループが初期化されるのを防ぐ
+const groups = reactive([]);
 
 const tableData = computedReactive(() => {
   // 入力ラベルの描画順序を変えない場合は何もしない
@@ -78,7 +98,7 @@ const tableData = computedReactive(() => {
           ? [2, 0, 1]
           : props._tableData.inputNum === 4
             ? [2, 3, 0, 1]
-            : [0, 1, 2, 3];
+            : [2, 3, 0, 1];
 
   return replaceTableData(Object.assign({}, props._tableData), indices);
 });
@@ -94,39 +114,44 @@ const subTables = computed(() => {
     else return bodies.flatMap(_ => splitBody2In4(_, axis));
   }
   if (props._tableData.inputNum <= 4) {
+    groups[0] = groups[0] || {
+      grp: tableData.groups[tableData.outIdx].grp[0],
+      rowGrp: tableData.groups[tableData.outIdx].rowGrp[0],
+      colGrp: tableData.groups[tableData.outIdx].colGrp[0],
+      allGrp: tableData.groups[tableData.outIdx].allGrp[0]
+    };
     return [{
       inputNum: tableData.inputNum,
       headers: tableData.headers,
       outName: tableData.outName,
       outIdx: tableData.outIdx,
-      groups: {
-        grp: tableData.groups[tableData.outIdx].grp[0],
-        rowGrp: tableData.groups[tableData.outIdx].rowGrp[0],
-        colGrp: tableData.groups[tableData.outIdx].colGrp[0],
-        allGrp: tableData.groups[tableData.outIdx].allGrp[0]
-      },
+      groups: groups[0],
       body: tableData.body
     }];
   } else {
     const headers = tableData.headers.slice(0, 4);
     const bodies = splitBody2In4(tableData.body, 4);
-    console.log(tableData.groups[tableData.outIdx]);
+    bodies.forEach((_, idx) => {
+      groups[idx] = groups[idx] || {
+        grp: tableData.groups[tableData.outIdx]?.grp[idx] || reactive([]),
+        rowGrp: tableData.groups[tableData.outIdx]?.rowGrp[idx] || reactive([]),
+        colGrp: tableData.groups[tableData.outIdx]?.colGrp[idx] || reactive([]),
+        allGrp: tableData.groups[tableData.outIdx]?.allGrp[idx] || reactive([])
+      };
+    });
     return bodies.map((body, idx) => ({
       body,
       inputNum: 4,
       headers,
       outName: tableData.outName,
       outIdx: tableData.outIdx,
-      groups: {
-        grp: tableData.groups[tableData.outIdx]?.grp[idx] || [],
-        rowGrp: tableData.groups[tableData.outIdx]?.rowGrp[idx] || [],
-        colGrp: tableData.groups[tableData.outIdx]?.colGrp[idx] || [],
-        allGrp: tableData.groups[tableData.outIdx]?.allGrp[idx] || []
-      }
+      groups: groups[idx]
     }));
   }
 });
-
+// auto grouping
+// ABCD/EF <-> AB/CDEF (ABCDE/F <-> A/BCDEF)
+// TODO 詳細設定としてKCtrlから渡す
 const drawOpt = {
   fontInFam: 'Meiryo',
   fontLabelSize: 16,
@@ -135,13 +160,31 @@ const drawOpt = {
   fontBodySize: 24,
   oneCell: 72,
   padding: 8, // paddingがないと外枠の太線をきれいに引けない
+  strokeMap: {
+    grp: {
+      sw: 1,
+      sc: 'black'
+    },
+    rowGrp: {
+      sw: 2,
+      sc: '#FFC107'
+    },
+    colGrp: {
+      sw: 3,
+      sc: '#2196F3'
+    },
+    allGrp: {
+      sw: 4,
+      sc: '#F44336'
+    }
+  }
 };
 const kvi = computedReactive(() => useKarnaghViewInfo(tableData, drawOpt, props.optView));
 provide('karnaughViewInfo', readonly(kvi));
 const baseOffset = computed(() => props._tableData.inputNum <= 4 ? 0 : drawOpt.oneCell);
 const svgWidth = computed(() =>
   baseOffset.value + (props._tableData.inputNum <= 4 ? kvi.width :
-    (kvi.width * 2 + figureMargin))
+    (kvi.width * 2 + figureMargin + kvi.outerInNameWidth))
 );
 const svgHeight = computed(() =>
   props._tableData.inputNum <= 4 ? kvi.height :
@@ -164,17 +207,28 @@ Set.prototype.max = function () {
 };
 
 const terms = computed(() => {
-  return '';
-  const labels = group.value.map((_) =>
-    _.map((_) => {
-      const [x, y] = _;
-      const label = colHeader.value[x].v + rowHeader.value[y].v;
-      return label;
-    })
-  );
+  const labels = groups.flatMap((k, idx) => {
+    const getIdx = (grp) => grp.map(_ => _.split('@').map(xy => xy.split(',').map(_ => parseInt(_) - 1)));
+    const dimLabelE = idx => tableData.headers[4] ? (idx % 2 === 0 ? '0' : '1') : '';
+    const dimLabelF = idx => tableData.headers[5] ? (idx < 2 ? '0' : '1') : '';
+
+    const ret = [];
+    ret.push(...getIdx(k.grp).map(_ => _.map(([x, y]) => kvi.colHeader[x].v + kvi.rowHeader[y].v + dimLabelE(idx) + dimLabelF(idx))));
+    // 縦横に跨るグループは2個目(idx=1)と3個目(idx=2)の図を見れば網羅できる
+    if (idx === 1) {
+      ret.push(...getIdx(k.rowGrp).map(_ => _.flatMap(([x, y]) => ['0', '1'].map(_ => kvi.colHeader[x].v + kvi.rowHeader[y].v + _ + dimLabelF(idx)))));
+      ret.push(...getIdx(k.colGrp).map(_ => _.flatMap(([x, y]) => ['0', '1'].map(_ => kvi.colHeader[x].v + kvi.rowHeader[y].v + dimLabelE(idx) + _))));
+    } else if (idx === 2) {
+      ret.push(...getIdx(k.rowGrp).map(_ => _.flatMap(([x, y]) => ['0', '1'].map(_ => kvi.colHeader[x].v + kvi.rowHeader[y].v + _ + dimLabelF(idx)))));
+      ret.push(...getIdx(k.colGrp).map(_ => _.flatMap(([x, y]) => ['0', '1'].map(_ => kvi.colHeader[x].v + kvi.rowHeader[y].v + dimLabelE(idx) + _))));
+      ret.push(...getIdx(k.allGrp).map(_ => _.flatMap(([x, y]) => ['0', '1'].flatMap(e => ['0', '1'].flatMap(f => kvi.colHeader[x].v + kvi.rowHeader[y].v + e + f)))));
+    }
+    return ret;
+  });
+
   return labels
     .map((l) => l.reduce((acc, v) => acc | (parseInt(l[0], 2) ^ parseInt(v, 2)), 0))
-    .map((_) => _.toString(2).padStart(kvi.colIn + rowIn.value, '0'))
+    .map((_) => _.toString(2).padStart(tableData.inputNum, '0'))
     .map((_, li) =>
       _.split('')
         .map((bit, idx) =>
@@ -185,7 +239,7 @@ const terms = computed(() => {
     .map((_) =>
       _.sort(
         (a, b) =>
-          props._tableData.headers.indexOf(a.input) - props._tableData.headers.indexOf(b.input)
+          tableData.headers.indexOf(a.input) - tableData.headers.indexOf(b.input)
       )
     );
 });
@@ -285,23 +339,21 @@ function isAllNeighbor(arr) {
   return ret;
 }
 function grouping() {
-  // [[x,y], ['0000', '0001', ...]]
+  // selects := [[x,y], ['0000', '0001', ...]]
   const selects = karnaughChildRef.value.map(_ => _.getSelects());
-  console.log(selects);
   // 各カルノー図の選択が基本的な条件を満たしているかチェック
   // 5変数以上のチェックは別で行う
+  if (!selects.some(_ => _[0].length > 0)) {
+    emit('msg', t('1つ以上選択してから囲みましょう。'));
+    return;
+  }
   for (let i = 0; i < selects.length; i++) {
     const [xy, labels, values, _selects] = selects[i];
     if (values.includes('0')) {
       emit('msg', t('0を含んで囲むことはできません。'));
       return;
     }
-    const len = values.length;
-    if (len === 0) {
-      emit('msg', t('1つ以上選択してから囲みましょう。'));
-      return;
-    }
-    if ((len & (len - 1)) !== 0) {
+    if ((values.length & (values.length - 1)) !== 0) {
       emit('msg', t('囲む数は2のべき乗にしましょう。'));
       return;
     }
@@ -310,28 +362,54 @@ function grouping() {
       return;
     }
   }
-  // TODO 5変数以上のちぇっく
-  // console.log(selects);
 
   // ここで同じペアが含まれているか比較するために文字列化
   const selectsStr = selects.map(_ => _[3].sort().join('@'));
-  console.log(selectsStr);
-  // 5変数以上でカルノー図をまたいで選択している場合の処理
-  if (selects.filter(_ => _[0].length > 0).length > 1) {
-    console.log("here");
-  } else {
 
+  // 指定されたグループで囲むor囲みを解除する
+  function helper(key) {
+    subTables.value.forEach((v, idx) => {
+      if (selects[idx][0].length === 0) return;
+      const hasIdx = subTables.value[idx].groups[key].indexOf(selectsStr[idx]);
+      if (hasIdx >= 0) {
+        subTables.value[idx].groups[key].splice(hasIdx, 1);
+        emit('msg', t('囲みを解除しました。'));
+      } else {
+        subTables.value[idx].groups[key].push(selectsStr[idx]);
+        emit('msg', t('囲みました。'));
+        emit('grouped', { oidx: tableData.outIdx, [key]: subTables.value[idx].groups, kidx: idx });
+      }
+    });
   }
-  const kidx = selects.findIndex(_ => _[0].length > 0);
-  const hasIdx = subTables.value[kidx].groups.grp.indexOf(selectsStr[kidx]);
-  if (hasIdx >= 0) {
-    subTables.value[kidx].groups.grp.splice(hasIdx, 1);
-    emit('msg', t('囲みを解除しました。'));
-  } else {
-    // return;
-    subTables.value[kidx].groups.grp.push(selectsStr[kidx]);
-    emit('msg', t('囲みました。'));
-    emit('grouped', { oidx: tableData.outIdx, grp: subTables.value[kidx].groups, kidx });
+
+  const strSet = new Set(selectsStr.filter(_ => _ !== ''));
+  if (strSet.size !== 1) {
+    emit('msg', t('各図で同じ座標のセルを選びましょう。'));
+    return;
+  }
+
+  // 5変数以上でカルノー図をまたいで選択している場合の数(4変数以下の時は1)
+  const kdim = selects.filter(_ => _[0].length > 0).length;
+  if (kdim === 1) {
+    helper('grp');
+  } else if (kdim === 2) {
+    const [fidx, lidx] = [selects.findIndex(_ => _[0].length > 0), selects.findLastIndex(_ => _[0].length > 0)];
+    const idxSum = (fidx + lidx) % 4;
+    // 0 1 カルノー図は左のIndexで配置されるので、
+    // 2 3 indexを加算して%4の合計が1だと横、2の倍数だと縦、3だと斜め
+    if (idxSum === 1) {
+      helper('rowGrp');
+    } else if ((idxSum % 2) === 0) {
+      helper('colGrp');
+    } else if (idxSum === 3) {
+      emit('msg', t('隣り合う図を選択しましょう。'));
+      return;
+    }
+  } else if (kdim === 3) {
+    emit('msg', t('囲む数は2のべき乗にしましょう。'));
+    return;
+  } else if (kdim === 4) {
+    helper('allGrp');
   }
   deselection();
 }
@@ -359,7 +437,7 @@ function autoGrouping() {
   const indices = range(kvi.colIn * 2)
     .map((c) => range(kvi.rowIn * 2).map((r) => [c, r]))
     .flat();
-  const label = xy => colHeader.value[xy[0]].v + rowHeader.value[xy[1]].v;
+  const label = xy => kvi.colHeader[xy[0]].v + kvi.rowHeader[xy[1]].v;
   const allLabels = indices.map((_) => label(_));
   // 総当りで求める
   const maxCombN = kvi.colIn * 2 * kvi.rowIn * 2;
@@ -379,8 +457,8 @@ function autoGrouping() {
     acc[v.v] = idx;
     return acc;
   };
-  const ch2idx = colHeader.value.reduce(_grping, {});
-  const rh2idx = rowHeader.value.reduce(_grping, {});
+  const ch2idx = kvi.colHeader.reduce(_grping, {});
+  const rh2idx = kvi.rowHeader.reduce(_grping, {});
   const acc2 = acc1.map((_) =>
     _.map((_) => {
       const [xl, yl] = [_.slice(0, kvi.colIn), _.slice(kvi.colIn)];
@@ -520,59 +598,66 @@ function save(ext) {
 }
 
 // groupがgroup_を参照しているのでgroupを直接変形したい時におかしくなるの回避
-function regroup(grp) {
-  group_.splice(0, group_.length);
-  grp.forEach(_ => group_.push(_));
+function regroup(oldGrp, newGrp) {
+  oldGrp.splice(0, oldGrp.length);
+  newGrp.forEach(_ => oldGrp.push(_));
 }
 
 function regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
-  // 2n変数の場合はxとyを入れ替えるだけ
-  if (tableData.inputNum % 2 === 0) {
+  // 3変数以外の場合はxとyを入れ替えるだけ
+  if (tableData.inputNum !== 3) {
     if (abbaNew !== abbaOld) {
-      regroup(group.value.map((grp) => grp.map(([x, y]) => `${y + 1},${x + 1}`).join('@')));
+      subTables.value.forEach(table => {
+        Object.values(table.groups).forEach(grp => {
+          regroup(grp,
+            grp.map(_ => _.split('@').map(xy => xy.split(','))
+              .map(([x, y]) => `${parseInt(y)},${parseInt(x)}`).join('@'))
+          );
+        });
+      });
     }
     return;
   }
+
   // 3変数の場合オプションの適用順序によって変形順序が異なるので、
   // 一度全ての変形を標準に戻してからオプションに従って変形をする。
   // 綺麗な法則が分からなかったので愚直に変換をする。数式から戻すのが理想か…？
 
   // まずは戻す
-  regroup(group.value.map((grp) =>
-    grp
-      .map(([x, y]) => {
-        let [dx, dy] = [x, y];
-        if (abbaOld) {
-          const _dx = x < 2 ? 3 * y : 1 + y;
-          const _dy = x % 3 === 0 ? 0 : 1;
-          [x, y] = a_bcOld ? [_dx, _dy] : [y, x];
-        }
-        if (abbaOld || a_bcOld) {
-          dx = x < 2 ? 0 : 1;
-          dy = x % 3 === 0 ? y : 3 - y;
-        }
-        return `${dx + 1},${dy + 1}`;
-      })
-      .join('@')
+  const grp = groups[0].grp;
+  regroup(grp, grp.map(_ => _.split('@').map(_ => _.split(',').map(_ => parseInt(_) - 1))
+    .map(([x, y]) => {
+      let [dx, dy] = [x, y];
+      if (abbaOld) {
+        const _dx = x < 2 ? 3 * y : 1 + y;
+        const _dy = x % 3 === 0 ? 0 : 1;
+        [x, y] = a_bcOld ? [_dx, _dy] : [y, x];
+      }
+      if (abbaOld || a_bcOld) {
+        dx = x < 2 ? 0 : 1;
+        dy = x % 3 === 0 ? y : 3 - y;
+      }
+      return `${dx + 1},${dy + 1}`;
+    })
+    .join('@')
   ));
   // 次に変形
-  regroup(group.value.map((grp) =>
-    grp
-      .map(([x, y]) => {
-        let [dx, dy] = [x, y];
-        if (abbaNew || a_bcNew) {
-          dx = y % 3 === 0 ? 0 : 1;
-          dy = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
-        }
-        if (a_bcNew) {
-          const [_dx, _dy] = [dy, dx];
-          dx = _dx % 3 === 0 ? _dy : 3 - _dy;
-          dy = _dx < 2 ? 0 : 1;
-          [dx, dy] = abbaNew ? [dx, dy] : [_dx, _dy];
-        }
-        return `${dx + 1},${dy + 1}`;
-      })
-      .join('@')
+  regroup(grp, grp.map(_ => _.split('@').map(_ => _.split(',').map(_ => parseInt(_) - 1))
+    .map(([x, y]) => {
+      let [dx, dy] = [parseInt(x), parseInt(y)];
+      if (abbaNew || a_bcNew) {
+        dx = y % 3 === 0 ? 0 : 1;
+        dy = x === 0 ? (y < 2 ? 0 : 1) : y < 2 ? 3 : 2;
+      }
+      if (a_bcNew) {
+        const [_dx, _dy] = [dy, dx];
+        dx = _dx % 3 === 0 ? _dy : 3 - _dy;
+        dy = _dx < 2 ? 0 : 1;
+        [dx, dy] = abbaNew ? [dx, dy] : [_dx, _dy];
+      }
+      return `${dx + 1},${dy + 1}`;
+    })
+    .join('@')
   ));
 }
 

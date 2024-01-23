@@ -118,7 +118,6 @@ const optMenu = [
 
 // TODO 消したタブを戻せる
 // TODO github flow (electron build)
-// TODO 図サイズ変更
 const projectName = ref('Project1');
 const tab = ref(0);
 const tabs = reactive([]);
