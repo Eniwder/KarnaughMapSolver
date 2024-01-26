@@ -27,19 +27,18 @@ const props = defineProps({
 const tableData = reactive(props.tableData);
 const totalCol = computed(() => tableData.meta.inputNum + tableData.meta.outputNum);
 const cellSetting = computed(() =>
-  [
-    ...range(totalCol.value).map((n) => ({
-      row: 0,
-      col: n,
-      readOnly: false,
-      className: 'htCenter',
-    })),
-    ...range(Math.pow(2, tableData.meta.inputNum) * totalCol.value).map((n) => ({
-      row: parseInt(n / totalCol.value) + 1,
-      col: n % totalCol.value,
-      className: 'htCenter',
-      readOnly: (n % totalCol.value) < tableData.meta.inputNum,
-    })),
+  [...range(totalCol.value).map((n) => ({
+    row: 0,
+    col: n,
+    readOnly: false,
+    className: 'htCenter',
+  })),
+  ...range(Math.pow(2, tableData.meta.inputNum) * totalCol.value).map((n) => ({
+    row: parseInt(n / totalCol.value) + 1,
+    col: n % totalCol.value,
+    className: 'htCenter',
+    readOnly: (n % totalCol.value) < tableData.meta.inputNum,
+  })),
   ]
 );
 const customBordersSetting = computed(() =>
@@ -87,10 +86,16 @@ const customBordersSetting = computed(() =>
   ]
 );
 
+// TODO 入力+出力の数を一定数にした後、他の値に変えるとテーブルが壊れる(今の設定だと13で壊れる)
+// optionの数によって壊れる数が変わる。意味不明だがオプションが多いほど上限が増えるので、適当なオプションをたくさんつけておく
 const hotSettings = reactive({
   licenseKey: 'non-commercial-and-evaluation',
   data: tableData.body,
   colHeaders: tableData.headers,
+  autoWrapRow: true,
+  autoWrapCol: true,
+  ariaTags: true,
+  className: '',
   afterRenderer() {
     setThColor();
   },

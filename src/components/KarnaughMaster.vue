@@ -1,7 +1,7 @@
 <template>
   <div class="karnaugh">
     <svg :width="svgWidth" :height="svgHeight" ref="svgRootRef">
-      <template v-if="tableData.inputNum > 4">
+      <template v-if="tableData.meta.inputNum > 4">
         <text :x="kvi.dimColHeaderLabel.x" :y="kvi.dimColHeaderLabel.y" :font-size="kvi.fontInSize"
           :font-family="kvi.fontLabelSize" text-anchor="middle" dominant-baseline="central" fill="black">
           {{ kvi.dimColHeaderLabel.v }} </text>
@@ -9,7 +9,7 @@
           fill="black" :font-size="kvi.fontInSize">{{
             v.v }}</text>
       </template>
-      <template v-if="tableData.inputNum > 5">
+      <template v-if="tableData.meta.inputNum > 5">
         <line :x1="kvi.padding + 8" :y1="kvi.padding + 8" :x2="offsets[0].x" :y2="offsets[0].y" stroke="black"
           stroke-width="1" />
         <text :x="kvi.dimRowHeaderLabel.x" :y="kvi.dimRowHeaderLabel.y" :font-size="kvi.fontInSize"
@@ -29,6 +29,9 @@
         <v-icon>mdi-file-word-outline</v-icon>
       </v-btn>
     </v-row>
+    <v-overlay v-model="isAutoGrouping" persistent width="auto" class="align-center justify-center">
+      <v-progress-circular indeterminate color="white" size="128" width="12" class="mb-0"></v-progress-circular>
+    </v-overlay>
   </div>
 </template>
 
@@ -40,6 +43,8 @@ import { useKarnaghViewInfo } from '../composables/useKarnaughViewInfo';
 const { t } = useI18n({ useScope: "global" });
 import { useComputedReactive } from '../composables/useComputedReactive';
 const { computedReactive } = useComputedReactive();
+import { useWebWorkerAsync } from '../composables/useWebWorkerAsync';
+const { webWorkerAsync } = useWebWorkerAsync();
 
 const emit = defineEmits(['msg', 'grouped']);
 defineExpose({ deselection, grouping, autoGrouping, reset, save });
@@ -49,7 +54,10 @@ const range = (n) => [...Array(n).keys()];
 const props = defineProps({
   _tableData: {
     body: [],
-    inputNum: Number,
+    meta: {
+      inputNum: Number,
+      outputNum: Number
+    },
     headers: [],
     outName: String,
     outIdx: Number,
@@ -69,6 +77,7 @@ const props = defineProps({
 const figureMargin = 16;
 const svgRootRef = ref(null);
 const karnaughChildRef = ref(null);
+const isAutoGrouping = ref(false);
 // subTablesが再計算されるたびにグループが初期化されるのを防ぐ
 const groups = reactive([]);
 
@@ -90,13 +99,13 @@ const tableData = computedReactive(() => {
     return td;
   }
   const indices =
-    props._tableData.inputNum === 2
+    props._tableData.meta.inputNum === 2
       ? [1, 0]
-      : props._tableData.inputNum === 3 && props.optView.A_BC_or_A_BC
+      : props._tableData.meta.inputNum === 3 && props.optView.A_BC_or_A_BC
         ? [1, 2, 0]
-        : props._tableData.inputNum === 3 && !props.optView.A_BC_or_A_BC
+        : props._tableData.meta.inputNum === 3 && !props.optView.A_BC_or_A_BC
           ? [2, 0, 1]
-          : props._tableData.inputNum === 4
+          : props._tableData.meta.inputNum === 4
             ? [2, 3, 0, 1]
             : [2, 3, 0, 1];
 
@@ -110,18 +119,13 @@ const subTables = computed(() => {
       acc.push(v.filter((_, idx) => idx !== axis));
       return acc;
     }, []));
-    if (body[0].length < 7) return bodies;
+    if ((body[0].length - tableData.meta.outputNum) < 6) return bodies;
     else return bodies.flatMap(_ => splitBody2In4(_, axis));
   }
-  if (props._tableData.inputNum <= 4) {
-    groups[0] = groups[0] || {
-      grp: tableData.groups[tableData.outIdx].grp[0],
-      rowGrp: tableData.groups[tableData.outIdx].rowGrp[0],
-      colGrp: tableData.groups[tableData.outIdx].colGrp[0],
-      allGrp: tableData.groups[tableData.outIdx].allGrp[0]
-    };
+  if (props._tableData.meta.inputNum <= 4) {
+    groups[0] = props._tableData.groups[0];
     return [{
-      inputNum: tableData.inputNum,
+      inputNum: tableData.meta.inputNum,
       headers: tableData.headers,
       outName: tableData.outName,
       outIdx: tableData.outIdx,
@@ -132,15 +136,16 @@ const subTables = computed(() => {
     const headers = tableData.headers.slice(0, 4);
     const bodies = splitBody2In4(tableData.body, 4);
     bodies.forEach((_, idx) => {
-      groups[idx] = groups[idx] || {
-        grp: tableData.groups[tableData.outIdx]?.grp[idx] || reactive([]),
-        rowGrp: tableData.groups[tableData.outIdx]?.rowGrp[idx] || reactive([]),
-        colGrp: tableData.groups[tableData.outIdx]?.colGrp[idx] || reactive([]),
-        allGrp: tableData.groups[tableData.outIdx]?.allGrp[idx] || reactive([])
+      groups[idx] = props._tableData.groups[idx] || {
+        grp: [],
+        rowGrp: [],
+        colGrp: [],
+        allGrp: [],
       };
     });
     return bodies.map((body, idx) => ({
       body,
+      outputNum: tableData.meta.outputNum,
       inputNum: 4,
       headers,
       outName: tableData.outName,
@@ -149,9 +154,8 @@ const subTables = computed(() => {
     }));
   }
 });
-// auto grouping
-// ABCD/EF <-> AB/CDEF (ABCDE/F <-> A/BCDEF)
-// TODO 詳細設定としてKCtrlから渡す
+// TODO ABCD/EF <-> AB/CDEF (ABCDE/F <-> A/BCDEF)
+// TODO 詳細設定としてKCtrlから以下を渡せるようにする
 const drawOpt = {
   fontInFam: 'Meiryo',
   fontLabelSize: 16,
@@ -179,16 +183,17 @@ const drawOpt = {
     }
   }
 };
+
 const kvi = computedReactive(() => useKarnaghViewInfo(tableData, drawOpt, props.optView));
 provide('karnaughViewInfo', readonly(kvi));
-const baseOffset = computed(() => props._tableData.inputNum <= 4 ? 0 : drawOpt.oneCell);
+const baseOffset = computed(() => props._tableData.meta.inputNum <= 4 ? 0 : drawOpt.oneCell);
 const svgWidth = computed(() =>
-  baseOffset.value + (props._tableData.inputNum <= 4 ? kvi.width :
+  baseOffset.value + (props._tableData.meta.inputNum <= 4 ? kvi.width :
     (kvi.width * 2 + figureMargin + kvi.outerInNameWidth))
 );
 const svgHeight = computed(() =>
-  props._tableData.inputNum <= 4 ? kvi.height :
-    props._tableData.inputNum <= 5 ? kvi.height + baseOffset.value :
+  props._tableData.meta.inputNum <= 4 ? kvi.height :
+    props._tableData.meta.inputNum <= 5 ? kvi.height + baseOffset.value :
       baseOffset.value + (kvi.height * 2 + figureMargin)
 );
 const offsets = computed(() => [
@@ -197,7 +202,6 @@ const offsets = computed(() => [
   { x: baseOffset.value + kvi.outerInNameWidth, y: baseOffset.value + kvi.height + figureMargin },
   { x: baseOffset.value + kvi.outerInNameWidth + kvi.width + figureMargin, y: baseOffset.value + kvi.height + figureMargin }
 ]);
-
 // 汚染
 Set.prototype.min = function () {
   return Math.min(...this.values());
@@ -228,7 +232,7 @@ const terms = computed(() => {
 
   return labels
     .map((l) => l.reduce((acc, v) => acc | (parseInt(l[0], 2) ^ parseInt(v, 2)), 0))
-    .map((_) => _.toString(2).padStart(tableData.inputNum, '0'))
+    .map((_) => _.toString(2).padStart(tableData.meta.inputNum, '0'))
     .map((_, li) =>
       _.split('')
         .map((bit, idx) =>
@@ -301,43 +305,6 @@ function copy4word() {
   emit('msg', t('数式をLaTeX形式でコピーしました。'));
 }
 
-function isNeighbor(poss, d) {
-  const xy = d === 'x' ? 0 : 1;
-  const max = (d === 'x' ? kvi.colIn : kvi.rowIn) * 2 - 1;
-  const arr = poss.map((_) => _[xy]).sort((a, b) => a - b);
-  let ret = true;
-  for (let i = 0; i < arr.length - 1; i++) {
-    const diff1 = arr[i + 1] - arr[i];
-    const diff2 = arr[i] - (arr[i + 1] % max);
-    ret = ret && (diff1 === 1 || diff2 === 0);
-  }
-  return ret;
-}
-function isAllNeighbor(arr) {
-  // [empty, [1], [2]].flat() -> [[1], [2]]
-  const idxGroup = (idx) => (acc, v) => {
-    acc[v[idx]] = acc[v[idx]] || [];
-    acc[v[idx]].push(v);
-    return acc;
-  };
-  // xかyで繋がりのあるセルの数を行か列ごとに計算して集計する
-  const idxLens = (idx) => (brr) =>
-    brr.map((brr) =>
-      brr
-        .map((ssc) => arr.filter((_) => _[idx] === ssc[idx]).length)
-        .reduce((acc, v) => acc + parseInt(v), 0)
-    );
-  const sameCols = [arr.reduce(idxGroup(0), [])].flat();
-  const sameRows = [arr.reduce(idxGroup(1), [])].flat();
-  const colLens = idxLens(1)(sameCols).flat();
-  const rowLens = idxLens(0)(sameRows).flat();
-  let ret = true;
-  ret = sameCols.reduce((acc, v) => acc && isNeighbor(v, 'y'), ret); // 縦が繋がってるか
-  ret = sameRows.reduce((acc, v) => acc && isNeighbor(v, 'x'), ret); // 横も繋がってるか
-  ret = ret && colLens.every((_) => arr.length === _); // 繋がりを全て集計したら選択した合計数と同じになるか(縦から見る)
-  ret = ret && rowLens.every((_) => arr.length === _); // 繋がりを全て集計したら選択した合計数と同じになるか(横から見る)
-  return ret;
-}
 function grouping() {
   // selects := [[x,y], ['0000', '0001', ...]]
   const selects = karnaughChildRef.value.map(_ => _.getSelects());
@@ -357,7 +324,7 @@ function grouping() {
       emit('msg', t('囲む数は2のべき乗にしましょう。'));
       return;
     }
-    if (!isAllNeighbor(xy)) {
+    if (!kvi.isAllNeighbor(xy)) {
       emit('msg', t('隣接したセルを選びましょう。'));
       return;
     }
@@ -377,7 +344,7 @@ function grouping() {
       } else {
         subTables.value[idx].groups[key].push(selectsStr[idx]);
         emit('msg', t('囲みました。'));
-        emit('grouped', { oidx: tableData.outIdx, [key]: subTables.value[idx].groups, kidx: idx });
+        emit('grouped', { oidx: tableData.outIdx, groups });
       }
     });
   }
@@ -416,71 +383,14 @@ function grouping() {
 function deselection() {
   karnaughChildRef.value.forEach(_ => _.deselection());
 }
-function combination(nums, k) {
-  let ans = [];
-  if (nums.length < k) return [];
-  if (k === 1) {
-    for (let i = 0; i < nums.length; i++) {
-      ans[i] = [nums[i]];
-    }
-  } else {
-    for (let i = 0; i < nums.length - k + 1; i++) {
-      let row = combination(nums.slice(i + 1), k - 1);
-      for (let j = 0; j < row.length; j++) {
-        ans.push([nums[i]].concat(row[j]));
-      }
-    }
-  }
-  return ans;
-}
-function autoGrouping() {
-  const indices = range(kvi.colIn * 2)
-    .map((c) => range(kvi.rowIn * 2).map((r) => [c, r]))
-    .flat();
-  const label = xy => kvi.colHeader[xy[0]].v + kvi.rowHeader[xy[1]].v;
-  const allLabels = indices.map((_) => label(_));
-  // 総当りで求める
-  const maxCombN = kvi.colIn * 2 * kvi.rowIn * 2;
-  const getAllCombLabels = (n) => {
-    if (n === 1) return combination(allLabels, n);
-    else return combination(allLabels, n).concat(getAllCombLabels(n / 2));
-  };
-  const allCombLabels = getAllCombLabels(maxCombN);
-  // 0を含むもの、1を含まないものを除外
-  const acc1 = allCombLabels.filter(
-    (comb) =>
-      !comb.some((_) => tableMap[_].includes('0')) &&
-      comb.some((_) => tableMap[_].includes('1'))
-  );
-  // 隣あっているものに限定。効率は悪いがlabelを一度indexに戻す
-  const _grping = (acc, v, idx) => {
-    acc[v.v] = idx;
-    return acc;
-  };
-  const ch2idx = kvi.colHeader.reduce(_grping, {});
-  const rh2idx = kvi.rowHeader.reduce(_grping, {});
-  const acc2 = acc1.map((_) =>
-    _.map((_) => {
-      const [xl, yl] = [_.slice(0, kvi.colIn), _.slice(kvi.colIn)];
-      return [ch2idx[xl], rh2idx[yl]];
-    })
-  );
 
-  const acc3 = acc2.filter((_) => isAllNeighbor(_));
-  // 同じ要素を含んでいるものを削除。ドントケアは無視する。
-  const isSuperset = (set, subset) => {
+async function autoGrouping() {
+  const isSuperset = (set, subset, eq) => {
     for (let elem of subset) {
       if (!set.has(elem)) return false;
     }
-    return set.size !== subset.size; // 「⊆」ではなく「⊂」とする
+    return eq || set.size !== subset.size; // 「⊆」ではなく「⊂」とする
   };
-  function union(setA, setB) {
-    let _union = new Set(setA);
-    for (let elem of setB) {
-      _union.add(elem);
-    }
-    return _union;
-  }
   function eqSet(as, bs) {
     if (as.size !== bs.size) return false;
     for (let a of as) if (!bs.has(a)) return false;
@@ -493,66 +403,239 @@ function autoGrouping() {
     }
     return _difference;
   }
-  const toOneList = (_) =>
-    Array.from(_).filter((_) => tableMap[label(_.split(','))] === '1');
+  function combination(nums, k) {
+    let ans = [];
+    if (nums.length < k) return [];
+    if (k === 1) {
+      for (let i = 0; i < nums.length; i++) {
+        ans[i] = [nums[i]];
+      }
+    } else {
+      for (let i = 0; i < nums.length - k + 1; i++) {
+        let row = combination(nums.slice(i + 1), k - 1);
+        for (let j = 0; j < row.length; j++) {
+          ans.push([nums[i]].concat(row[j]));
+        }
+      }
+    }
+    return ans;
+  }
+  const getDiff = (a, b) => a.filter(aa => !b.some(bb => eqSet(aa, bb))); // a-b
 
-  const acc4 = acc3
-    .map((_) => new Set(_.map((_) => _.join(','))))
-    .filter((v, _, arr) => !arr.some((_) => isSuperset(_, v)))
-    .filter(
-      (v, _, arr) =>
-        !arr.some(
-          (_) => _.size >= v.size && isSuperset(new Set(toOneList(_)), new Set(toOneList(v)))
-        )
-    );
+  // 各groupを初期化
+  groups.forEach(g => {
+    g.grp.splice(0, g.grp.length);
+    g.colGrp.splice(0, g.colGrp.length);
+    g.rowGrp.splice(0, g.rowGrp.length);
+    g.allGrp.splice(0, g.allGrp.length);
+  });
 
-  // ある程度絞った「囲み」の組み合わせを全て求めて、
-  // 出力が1となるセルを全て含む組み合わせを総当りで求める
-  // 優先順位：項の少なさ > 各項のシンプルさ
-  const oneList = allLabels
-    .filter((label) => tableMap[label].includes('1'))
-    .map((_) => {
-      const [xl, yl] = [_.slice(0, kvi.colIn), _.slice(kvi.colIn)];
-      return [ch2idx[xl], rh2idx[yl]].join(',');
+  // 各4カルノー図
+  const { canGroups, _groups, oneSets } = karnaughChildRef.value.reduce((acc, v) => {
+    const { canGroup, group, oneSet } = v.autoGrouping();
+    acc.canGroups.push(canGroup);
+    acc._groups.push(group || []);
+    acc.oneSets.push(oneSet);
+    return acc;
+  }, { canGroups: [], _groups: [], oneSets: [] });
+  if (oneSets.every(_ => _.size === 0)) return;
+  const acc6 = [];
+  // groupにある値を改めてall,col,rowでくくる
+  // その時、groupは他要素のdon't careとペアを組める
+  // 既存groupと再くくりの結果の全ての組み合わせで、onSetを網羅する最小項数を探す
+  const allGrp = [];
+  if (tableData.meta.inputNum === 6) {
+    const noDup = _groups.map(g => g.filter(gg => canGroups.every(c => c(gg)))).reduce((acc, v) => {
+      v.map(set => Array.from(set).join('@')).forEach(_ => acc.add(_));
+      return acc;
+    }, new Set());
+    Array.from(noDup).map(_ => new Set(_.split('@'))).forEach(_ => allGrp.push(_));
+  }
+  // console.log(allGrp);
+  const [rowIdxMap, colIdxMap] = [[1, 0, 3, 2], [2, 3, 0, 1]];
+  range(4).forEach((_, idx) => acc6[idx] = { grp: [], rowGrp: [], colGrp: [], allGrp: allGrp });
+  _groups.forEach((group, idx) => {
+    const rowGrp = getDiff(group.filter(g => canGroups[rowIdxMap[idx]]?.(g)), allGrp || []); // [0,1] [1,0] [2,3] [3,2]
+    const colGrp = getDiff(group.filter(g => canGroups[colIdxMap[idx]]?.(g)), allGrp || []); // [0,2] [1,3] [2,0] [3,1] 
+    const grp = getDiff(getDiff(getDiff(group, colGrp), rowGrp), allGrp);
+    acc6[idx].grp.push(...grp);
+    acc6[idx].rowGrp.push(...rowGrp);
+    acc6[idx].colGrp.push(...colGrp);
+    acc6[idx].allGrp = allGrp;
+  });
+  // console.log(acc6);
+
+  // 組み合わせを計算しやすくするためにデータをラベルに紐付ける
+  // 組み合わせを減らすためにデータは枝刈りする
+  const _kms = [];
+  const acc7 = range(acc6.length).map((_, idx) => ({ grp: acc6[idx].grp, rowGrp: [], colGrp: [], allGrp: [] }));
+  acc7[0].allGrp = allGrp;
+  Array.from(new Set(Array.from(new Set([...acc6[0].rowGrp, ...acc6[1].rowGrp].map(_ => Array.from(_).join('@')))).map(_ => _.split('@'))))
+    .forEach(rg => acc7[0].rowGrp.push(rg));
+  Array.from(new Set(Array.from(new Set([...acc6[2].rowGrp, ...acc6[3].rowGrp].map(_ => Array.from(_).join('@')))).map(_ => _.split('@'))))
+    .forEach(rg => acc7[2].rowGrp.push(rg));
+  Array.from(new Set(Array.from(new Set([...acc6[0].colGrp, ...acc6[2].colGrp].map(_ => Array.from(_).join('@')))).map(_ => _.split('@'))))
+    .forEach(rg => acc7[0].colGrp.push(rg));
+  Array.from(new Set(Array.from(new Set([...acc6[1].colGrp, ...acc6[3].colGrp].map(_ => Array.from(_).join('@')))).map(_ => _.split('@'))))
+    .forEach(rg => acc7[1].colGrp.push(rg));
+
+  // console.log(acc7);
+  acc7.forEach((grps, idx) => {
+    Object.keys(grps).forEach(gkey => {
+      _kms.push(grps[gkey].map((v, subIdx) => `${idx},${gkey},${subIdx}`));
     });
-  const oneSet = new Set(oneList);
-  const getGrpComb = (arr) => {
-    const getAns = (comb) =>
-      comb.filter((sets) => {
-        const set = sets.reduce((acc, v) => union(acc, v));
-        return eqSet(set, oneSet) || isSuperset(set, oneSet);
+  });
+  const kms = _kms.flat();
+
+  const getGrpComb = (arr, minComb) => {
+    const getAns = (combs) => {
+      return combs.filter(comb => {
+        const fillSet = [new Set(), new Set(), new Set(), new Set()];
+        comb.forEach(ks => {
+          const [_idx, key, subIdx] = ks.split(',');
+          const idx = parseInt(_idx);
+          const grp = acc7[idx][key][subIdx].values();
+          for (const g of grp) {
+            fillSet[idx].add(g);
+            if (key === 'rowGrp') {
+              fillSet[idx + ((idx % 2) === 0 ? 1 : -1)].add(g); // 0<-->1, 2<-->3
+            } else if (key === 'colGrp') {
+              fillSet[idx + ((idx < 2) ? 2 : -2)].add(g); // 0<-->2, 1<-->3
+            } else if (key === 'allGrp') {
+              fillSet[(idx + 1) % 4].add(g);
+              fillSet[(idx + 2) % 4].add(g);
+              fillSet[(idx + 3) % 4].add(g);
+            }
+          }
+        });
+        return oneSets.every((os, idx) => isSuperset(fillSet[idx], os, true));
       });
+    };
     const helper = (n) => {
-      if (n >= arr.length) return getAns(combination(arr, n));
+      if (n >= kms.length) return getAns(combination(kms, n));
       else {
-        const ans = getAns(combination(arr, n));
+        const ans = getAns(combination(kms, n));
         if (ans.length > 0) return ans;
         else return helper(n + 1);
       }
     };
-    return helper(1);
+    return helper(minComb);
   };
 
-  const acc5 = getGrpComb(acc4);
-  acc5.sort((a, b) => {
+  const weights = { grp: 0, rowGrp: 1, colGrp: 1, allGrp: 3 };
+  const maxComb = acc6.reduce((acc, v) => acc + Object.values(v).reduce((acc, v) => acc + v.length, 0), 0);
+  const minComb = Math.max(Math.max(...acc6.map(grps => Object.values(grps).reduce((acc, v) => acc + v.length, 0))),
+    maxComb - acc7.reduce((acc, v) => acc + Object.keys(v).reduce((acc, k) => acc + v[k].length * weights[k], 0), 0));
+  // console.log(minComb);
+
+  const task = (arg) => {
+    const { acc7, minComb, kms, oneSets } = arg;
+    const isSuperset = (set, subset, eq) => {
+      if (subset)
+        for (let elem of subset) {
+          if (!set.has(elem)) return false;
+        }
+      return eq || set.size !== subset.size; // 「⊆」ではなく「⊂」とする
+    };
+    function combination(nums, k) {
+      let ans = [];
+      if (nums.length < k) return [];
+      if (k === 1) {
+        for (let i = 0; i < nums.length; i++) {
+          ans[i] = [nums[i]];
+        }
+      } else {
+        for (let i = 0; i < nums.length - k + 1; i++) {
+          let row = combination(nums.slice(i + 1), k - 1);
+          for (let j = 0; j < row.length; j++) {
+            ans.push([nums[i]].concat(row[j]));
+          }
+        }
+      }
+      return ans;
+    }
+    const getGrpComb = (arr, minComb) => {
+      const getAns = (combs) => {
+        return combs.filter(comb => {
+          const fillSet = [new Set(), new Set(), new Set(), new Set()];
+          comb.forEach(ks => {
+            const [_idx, key, subIdx] = ks.split(',');
+            const idx = parseInt(_idx);
+            Array.from(acc7[idx][key][subIdx]).forEach(g => {
+              fillSet[idx].add(g);
+              if (key === 'rowGrp') {
+                fillSet[idx + ((idx % 2) === 0 ? 1 : -1)].add(g); // 0<-->1, 2<-->3
+              } else if (key === 'colGrp') {
+                fillSet[idx + ((idx < 2) ? 2 : -2)].add(g); // 0<-->2, 1<-->3
+              } else if (key === 'allGrp') {
+                fillSet[(idx + 1) % 4].add(g);
+                fillSet[(idx + 2) % 4].add(g);
+                fillSet[(idx + 3) % 4].add(g);
+              }
+            });
+          });
+          return oneSets.every((os, idx) => isSuperset(fillSet[idx], os, true));
+        });
+      };
+      const helper = (n) => {
+        if (n >= kms.length) return getAns(combination(kms, n));
+        else {
+          const ans = getAns(combination(kms, n));
+          if (ans.length > 0) return ans;
+          else return helper(n + 1);
+        }
+      };
+      return helper(minComb);
+    };
+    return getGrpComb(acc7, minComb);
+  };
+  if ((tableData.meta.inputNum === 6) && (kms.length > 10)) {
+    emit('msg', t('囲んでいます。複雑なので結構時間がかかるかも。'));
+    isAutoGrouping.value = true;
+  }
+
+  const acc8 = window.Worker ? await webWorkerAsync(task, { acc7, minComb, kms, oneSets }) : getGrpComb(acc7, minComb);
+  isAutoGrouping.value = false;
+  // console.log(acc8);
+
+  // 項数が同じ場合は、allGrp, colGrp=rowGrpの順で数が多くなるようにする
+  const getScore = keys => {
+    const [idx, key, subIdx] = keys.split(',');
+    const grp = Array.from(acc7[idx][key][subIdx]);
+    const weight = key === 'allGrp' ? 4 :
+      (key === 'colGrp' || key === 'rowGrp') ? 2 : 1;
+    return grp.length * weight;
+  };
+
+  acc8.sort((a, b) => {
     const first = a.length - b.length;
-    const second =
-      a.reduce((acc, v) => acc + v.size, 0) - b.reduce((acc, v) => acc + v.size, 0);
+    const second = b.reduce((acc, v) => acc + getScore(v), 0) - a.reduce((acc, v) => acc + getScore(v), 0);
     return first !== 0 ? first : second;
   });
-
-  group_.splice(0, group_.length);
-  acc5[0].map((_) =>
-    Array.from(_)
+  acc8[0].forEach(ks => {
+    const [_idx, key, subIdx] = ks.split(',');
+    const idx = parseInt(_idx);
+    const grp = Array.from(acc7[idx][key][subIdx])
       .map((_) =>
         _.split(',')
           .map((_) => parseInt(_) + 1)
           .join(',')
       )
       .sort()
-      .join('@')
-  ).forEach(_ => group_.push(_));
-}
+      .join('@');
+    groups[idx][key].push(grp);
+    if (key === 'rowGrp') {
+      groups[idx + ((idx % 2) === 0 ? 1 : -1)].rowGrp.push(grp); // 0<-->1, 2<-->3
+    } else if (key === 'colGrp') {
+      groups[idx + ((idx < 2) ? 2 : -2)].colGrp.push(grp); // 0<-->2, 1<-->3
+    } else if (key === 'allGrp') {
+      groups[(idx + 1) % 4].allGrp.push(grp);
+      groups[(idx + 2) % 4].allGrp.push(grp);
+      groups[(idx + 3) % 4].allGrp.push(grp);
+    }
+  });
+  emit('grouped', { oidx: tableData.outIdx, groups });
+};
 
 function reset() {
   deselection();
@@ -605,7 +688,7 @@ function regroup(oldGrp, newGrp) {
 
 function regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
   // 3変数以外の場合はxとyを入れ替えるだけ
-  if (tableData.inputNum !== 3) {
+  if (tableData.meta.inputNum !== 3) {
     if (abbaNew !== abbaOld) {
       subTables.value.forEach(table => {
         Object.values(table.groups).forEach(grp => {
@@ -705,4 +788,3 @@ watch(() => props.optView.A_BC_or_A_BC, (newV, oldV) => {
   width: 48px
 }
 </style>
-        

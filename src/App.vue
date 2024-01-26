@@ -1,6 +1,6 @@
 <template>
   <v-app id="app">
-    <v-toolbar color="indigo">
+    <v-toolbar color="indigo" height="40">
       <v-menu class="optMenu" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
           <v-btn icon variant="text" v-bind="props">
@@ -70,14 +70,15 @@
                 label="Inputs" @update:modelValue="changeInOut(tab.id, 'input', $event, idx)"></v-select>
             </v-col>
             <v-col class="d-flex inout" cols="2">
-              <v-select :items="[1, 2, 3, 4, 5, 6, 7, 8, 9]" variant="outlined" density="compact"
+              <v-select :items="[1, 2, 3, 4, 5, 6]" variant="outlined" density="compact"
                 v-model="tab.sheets.meta.outputNum" label="Outputs"
                 @update:modelValue="changeInOut(tab.id, 'output', $event, idx)"></v-select>
             </v-col>
           </v-row>
 
           <v-row>
-            <v-col cols="12" sm="6" class="sheets" :style="{ height: tab.sheetHeight }">
+            <v-col class="sheets" cols="12" sm="6"
+              :style="{ height: tab.sheetHeight, flexBasis: (tab.sheets.meta.inputNum + tab.sheets.meta.outputNum) * 60 + 'px' }">
               <MySheets :tableData="tab.sheets" @changeCell="changeCell(tab.id, $event, idx)" ref="sheetsRef">
               </MySheets>
             </v-col>
@@ -134,16 +135,16 @@ const karnaughTable = computed(() => {
   return range(activeTab.sheets.meta.outputNum).map((idx) => {
     const ret = {};
     const tab = activeTab;
-    ret.inputNum = tab.sheets.meta.inputNum;
-    ret.headers = tab.sheets.body[0].slice(0, ret.inputNum);
-    ret.outName = tab.sheets.body[0][ret.inputNum + idx];
+    ret.meta = tab.sheets.meta;
+    ret.headers = tab.sheets.body[0].slice(0, tab.sheets.meta.inputNum);
+    ret.outName = tab.sheets.body[0][tab.sheets.meta.inputNum + idx];
     ret.body = tab.sheets.body.filter((_, idx) => idx !== 0);
     ret.key = tab.id + ret.outName + idx;
     ret.groups = tab.sheets.groups?.[idx] || [{
-      grp: [[]],
-      rowGrp: [[]],// 5入力の時に使われる横で共通するグループ
-      colGrp: [[]],// 6入力の時に使われる縦で共通するグループ
-      allGrp: [[]]// 6入力の時に使われる全てで共通するグループ
+      grp: [],
+      rowGrp: [],// 5入力の時に使われる横で共通するグループ
+      colGrp: [],// 6入力の時に使われる縦で共通するグループ
+      allGrp: []// 6入力の時に使われる全てで共通するグループ
     }];
     ret.outIdx = idx; // bodyを分けほうがよかったかもしれない
     return ret;
@@ -206,27 +207,23 @@ async function loadFile(event) {
 }
 
 function grouped(event) {
-  console.log("here", event);
-  const { oidx, grp, rowGrp, colGrp, allGrp, kidx } = event;
-  // Object.keys(activeTab.sheets.groups).forEach(k => {
-  //   if (event[k]) activeTab.sheets.groups[oidx][k][kidx] = event[k];
-  // });
-  //   if (grp) activeTab.sheets.grp[oidx][kidx] = grp;
-  //   if (rowGrp) activeTab.sheets.rowGrp[oidx][kidx] = rowGrp;
-  //   if (colGrp) activeTab.sheets.colGrp[oidx][kidx] = colGrp;
-  //   if (allGrp) activeTab.sheets.allGrp[oidx][kidx] = allGrp;
+  const { oidx, groups } = event;
+  console.log(oidx, groups, activeTab.sheets.groups);
+  Object.keys(groups).forEach(key => {
+    activeTab.sheets.groups[oidx][key] = groups[key];
+  });
 }
 
 function createTruthTable(inputNum, outputNum) {
   const ret = {
     headers: [],
     body: [],
-    // groups: [{
-    //   grp: [[]],
-    //   rowGrp: [[]],
-    //   colGrp: [[]],
-    //   allGrp: [[]],
-    // }],
+    groups: [[{
+      grp: [],
+      rowGrp: [],
+      colGrp: [],
+      allGrp: [],
+    }]],
     meta: {
       inputNum,
       outputNum,
@@ -262,6 +259,12 @@ function addTab() {
     sheets: createTruthTable(4, 1),
     modified: true,
   });
+  // 実験データ
+  // '00**00*1000100000011000000110000'.split('').forEach((_, idx) => tabs[0].sheets.body[idx + 1][5] = _);
+  // '001*00*1001100000011000000110000'.split('').forEach((_, idx) => tabs[0].sheets.body[idx + 1][5] = _);
+  // '1111000000000000000000000000000000000000000000001111000000000100'.split('').forEach((_, idx) => tabs[0].sheets.body[idx + 1][6] = _);
+  // '1111011011111111110111111110111111101111000101110110110111111111'.split('').forEach((_, idx) => tabs[0].sheets.body[idx + 1][6] = _);
+
   // nextTickだと真理値表がレンダリングされる前？なのでその対策
   setTimeout(() => {
     tab.value = tabId;
@@ -277,6 +280,7 @@ function deleteTab(id) {
 function changeInOut(id, inout, event, idx) {
   const tabId = tabs.findIndex((_) => _.id === id);
   const oldBody = tabs[tabId].sheets.body;
+  const oldGroups = tabs[tabId].sheets.groups;
   const { inputNum, outputNum } = tabs[tabId].sheets.meta;
   tabs[tabId].sheets = createTruthTable(inputNum, outputNum);
   // 出力の数が変わった場合は過去の情報を引き継ぐ
@@ -289,6 +293,14 @@ function changeInOut(id, inout, event, idx) {
       range(oldBody.length).forEach((row) => {
         tabs[tabId].sheets.body[row][i] = oldBody[row][i];
       });
+    }
+    for (let i = 0; i < outputNum; i++) {
+      tabs[tabId].sheets.groups[i] = oldGroups[i] || [{
+        grp: [],
+        rowGrp: [],
+        colGrp: [],
+        allGrp: [],
+      }];
     }
     // 出力が減った場合はタブの位置を修正
     if (tabs[tabId].sheets.body[0].length < oldBody[0].length) {
@@ -373,7 +385,6 @@ onMounted(() => {
   height: 500px;
   max-height: 1000px;
   min-width: 400px;
-  flex-basis: content;
 }
 
 .v-select {
@@ -477,5 +488,9 @@ button[role='tab'] div .v-btn--icon {
 
 .karnaughTable {
   max-width: none;
+}
+
+.v-container {
+  padding-bottom: 4px !important;
 }
 </style>

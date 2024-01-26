@@ -2,20 +2,21 @@ import { computed } from 'vue';
 const range = (n) => [...Array(n).keys()];
 
 // offsetに依存しないカルノー図の図形情報を管理する
+// あとは共通で使うオマケメソッド
 export function useKarnaghViewInfo(tableData, drawOpt, optView) {
   const { padding, fontInFam, fontLabelSize, oneCell, fontInSize, fontBodyFam, fontBodySize, strokeMap } = drawOpt;
   const ctx = document.createElement('canvas').getContext('2d');
 
   // 列の数
   const colIn = computed(() =>
-    Math.min(2, parseInt(tableData.inputNum / 2) +
-      (tableData.inputNum === 3 && optView.A_BC_or_A_BC ? 1 : 0))
+    Math.min(2, parseInt(tableData.meta.inputNum / 2) +
+      (tableData.meta.inputNum === 3 && optView.A_BC_or_A_BC ? 1 : 0))
   );
   // 行の数
   const rowIn = computed(() =>
     Math.min(2,
-      (tableData.inputNum - parseInt(tableData.inputNum / 2)) -
-      (tableData.inputNum === 3 && optView.A_BC_or_A_BC ? 1 : 0)
+      (tableData.meta.inputNum - parseInt(tableData.meta.inputNum / 2)) -
+      (tableData.meta.inputNum === 3 && optView.A_BC_or_A_BC ? 1 : 0)
     ));
 
   // 入力名の横幅
@@ -30,7 +31,7 @@ export function useKarnaghViewInfo(tableData, drawOpt, optView) {
   });
   // 入力名の横幅(入力数が5,6以上の時に表示される)
   const outerInNameWidth = computed(() => {
-    if (tableData.inputNum < 5) return 0;
+    if (tableData.meta.inputNum < 5) return 0;
     const colLabel = tableData.headers[4] || '';
     const rowLabel = tableData.headers[5] || '';
     if (Math.max(colLabel.length, rowLabel.length) <= 2) return 0;
@@ -119,10 +120,49 @@ export function useKarnaghViewInfo(tableData, drawOpt, optView) {
     }));
   });
 
+  function isNeighbor(poss, d) {
+    const xy = d === 'x' ? 0 : 1;
+    const max = (d === 'x' ? colIn.value : rowIn.value) * 2 - 1;
+    const arr = poss.map((_) => _[xy]).sort((a, b) => a - b);
+    let ret = true;
+    for (let i = 0; i < arr.length - 1; i++) {
+      const diff1 = arr[i + 1] - arr[i];
+      const diff2 = arr[i] - (arr[i + 1] % max);
+      ret = ret && (diff1 === 1 || diff2 === 0);
+    }
+    return ret;
+  }
+  function isAllNeighbor(arr) {
+    // [empty, [1], [2]].flat() -> [[1], [2]]
+    const idxGroup = (idx) => (acc, v) => {
+      acc[v[idx]] = acc[v[idx]] || [];
+      acc[v[idx]].push(v);
+      return acc;
+    };
+    // xかyで繋がりのあるセルの数を行か列ごとに計算して集計する
+    const idxLens = (idx) => (brr) =>
+      brr.map((brr) =>
+        brr
+          .map((ssc) => arr.filter((_) => _[idx] === ssc[idx]).length)
+          .reduce((acc, v) => acc + parseInt(v), 0)
+      );
+    const sameCols = [arr.reduce(idxGroup(0), [])].flat();
+    const sameRows = [arr.reduce(idxGroup(1), [])].flat();
+    const colLens = idxLens(1)(sameCols).flat();
+    const rowLens = idxLens(0)(sameRows).flat();
+    let ret = true;
+    ret = sameCols.reduce((acc, v) => acc && isNeighbor(v, 'y'), ret); // 縦が繋がってるか
+    ret = sameRows.reduce((acc, v) => acc && isNeighbor(v, 'x'), ret); // 横も繋がってるか
+    ret = ret && colLens.every((_) => arr.length === _); // 繋がりを全て集計したら選択した合計数と同じになるか(縦から見る)
+    ret = ret && rowLens.every((_) => arr.length === _); // 繋がりを全て集計したら選択した合計数と同じになるか(横から見る)
+    return ret;
+  }
+
   return {
     colIn, rowIn, width, height, left, top, right, bottom, inNameWidth, outerInNameWidth,
     padding, fontInFam, fontLabelSize, oneCell, fontInSize, fontBodyFam, fontBodySize, strokeMap,
-    colHeaderLabel, colHeader, rowHeaderLabel, rowHeader, dimColHeaderLabel, dimColHeader, dimRowHeaderLabel, dimRowHeader
+    colHeaderLabel, colHeader, rowHeaderLabel, rowHeader, dimColHeaderLabel, dimColHeader, dimRowHeaderLabel, dimRowHeader,
+    isAllNeighbor
   };
 }
 

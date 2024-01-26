@@ -54,7 +54,7 @@ import { useComputedReactive } from '../composables/useComputedReactive';
 const { computedReactive } = useComputedReactive();
 const kvi = inject('karnaughViewInfo');
 const emit = defineEmits(['msg', 'grouped', 'click',]);
-defineExpose({ deselection, grouping, getSelects, reset });
+defineExpose({ deselection, grouping, getSelects, reset, autoGrouping });
 
 const range = (n) => [...Array(n).keys()];
 
@@ -83,7 +83,6 @@ const _selects = reactive([]);
 const svgChild = ref(null);
 const offset = computed(() => props.offset);
 const tableData = computedReactive(() => props.tableData);
-
 const tableMap = computed(() => {
   return tableData.body.reduce((acc, v) => {
     const [ins, out] = [
@@ -114,13 +113,13 @@ const bezs = computed(() => circles.value.filter((_) => _.type === 'bez').sort((
 const circles = computed(() => {
   const ret = [];
   const addArc = (x1, y1, x2, y2, w, h, f2, sw, sc) => {
-    const [ajx, px] = x1 === x2 ? [kvi.oneCell / 2.4, 0] : [-4, 2];
-    const [ajy, py] = y1 == y2 ? [kvi.oneCell / 2.4, 0] : [-4, 2];
+    const [ajx, px] = x1 === x2 ? [kvi.oneCell / 2.4, 0] : [-1 - sw, 2];
+    const [ajy, py] = y1 == y2 ? [kvi.oneCell / 2.4, 0] : [-1 - sw, 2];
     ret.push({
       type: 'arc',
       x1: kvi.left + (x1 + 1) * kvi.oneCell + kvi.inNameWidth + px,
       y1: kvi.top + (y1 + 1) * kvi.oneCell + py,
-      rx: (w / 2) * kvi.oneCell + ajx - sw,
+      rx: (w / 2) * kvi.oneCell + ajx,
       ry: (h / 2) * kvi.oneCell + ajy,
       katamuki: 0,
       f1: 1,
@@ -270,6 +269,152 @@ function deselection() {
 function reset() {
   deselection();
   tableData.groups.forEach(_ => _.splice(0, _.length));
+}
+
+function combination(nums, k) {
+  let ans = [];
+  if (nums.length < k) return [];
+  if (k === 1) {
+    for (let i = 0; i < nums.length; i++) {
+      ans[i] = [nums[i]];
+    }
+  } else {
+    for (let i = 0; i < nums.length - k + 1; i++) {
+      let row = combination(nums.slice(i + 1), k - 1);
+      for (let j = 0; j < row.length; j++) {
+        ans.push([nums[i]].concat(row[j]));
+      }
+    }
+  }
+  return ans;
+}
+
+function autoGrouping() {
+  const indices = range(kvi.colIn * 2)
+    .map((c) => range(kvi.rowIn * 2).map((r) => [c, r]))
+    .flat();
+  const label = xy => kvi.colHeader[xy[0]].v + kvi.rowHeader[xy[1]].v;
+  const allLabels = indices.map((_) => label(_));
+  // 総当りで求める
+  const maxCombN = kvi.colIn * 2 * kvi.rowIn * 2;
+  const getAllCombLabels = (n) => {
+    if (n === 1) return combination(allLabels, n);
+    else return combination(allLabels, n).concat(getAllCombLabels(n / 2));
+  };
+  const allCombLabels = getAllCombLabels(maxCombN);
+  // 0を含むもの、1を含まないものを除外
+  const acc1 = allCombLabels.filter(
+    (comb) =>
+      !comb.some((_) => tableMap.value[_].includes('0')) &&
+      comb.some((_) => tableMap.value[_].includes('1'))
+  );
+
+  // 隣あっているものに限定。効率は悪いがlabelを一度indexに戻す
+  const _grping = (acc, v, idx) => {
+    acc[v.v] = idx;
+    return acc;
+  };
+  const ch2idx = kvi.colHeader.reduce(_grping, {});
+  const rh2idx = kvi.rowHeader.reduce(_grping, {});
+  const acc2 = acc1.map((_) =>
+    _.map((_) => {
+      const [xl, yl] = [_.slice(0, kvi.colIn), _.slice(kvi.colIn)];
+      return [ch2idx[xl], rh2idx[yl]];
+    })
+  );
+  const acc3 = acc2.filter((_) => kvi.isAllNeighbor(_));
+  // 同じ要素を含んでいるものを削除。ドントケアは無視する。
+  const isSuperset = (set, subset, eq) => {
+    for (let elem of subset) {
+      if (!set.has(elem)) return false;
+    }
+    return eq || set.size !== subset.size; // 「⊆」ではなく「⊂」とする
+  };
+  function union(setA, setB) {
+    let _union = new Set(setA);
+    for (let elem of setB) {
+      _union.add(elem);
+    }
+    return _union;
+  }
+  function eqSet(as, bs) {
+    if (as.size !== bs.size) return false;
+    for (let a of as) if (!bs.has(a)) return false;
+    return true;
+  }
+
+  const toOneList = (_) =>
+    Array.from(_).filter((_) => tableMap.value[label(_.split(','))] === '1');
+  const toOneOrDcList = (_) =>
+    Array.from(_).filter((_) => tableMap.value[label(_.split(','))] !== '0');
+
+  const acc4 = acc3
+    .map((_) => new Set(_.map((_) => _.join(','))))
+    .filter((v, _, arr) => !arr.some((_) => isSuperset(_, v)))
+    .filter(
+      (v, _, arr) =>
+        !arr.some(
+          (_) => _.size >= v.size && isSuperset(new Set(toOneList(_)), new Set(toOneList(v)))
+        )
+    );
+
+  // ある程度絞った「囲み」の組み合わせを全て求めて、
+  // 出力が1となるセルを全て含む組み合わせを総当りで求める
+  // 優先順位：項の少なさ > 各項のシンプルさ
+  const oneList = allLabels
+    .filter((label) => tableMap.value[label].includes('1'))
+    .map((_) => {
+      const [xl, yl] = [_.slice(0, kvi.colIn), _.slice(kvi.colIn)];
+      return [ch2idx[xl], rh2idx[yl]].join(',');
+    });
+  const oneSet = new Set(oneList);
+  const getGrpComb = (arr) => {
+    const getAns = (comb) =>
+      comb.filter((sets) => {
+        const set = sets.reduce((acc, v) => union(acc, v));
+        return isSuperset(set, oneSet, true);
+      });
+    const helper = (n) => {
+      if (n >= arr.length) return getAns(combination(arr, n));
+      else {
+        const ans = getAns(combination(arr, n));
+        if (ans.length > 0) return ans;
+        else return helper(n + 1);
+      }
+    };
+    return helper(1);
+  };
+
+  const acc5 = getGrpComb(acc4);
+  acc5.sort((a, b) => {
+    const first = a.length - b.length;
+    const second =
+      a.reduce((acc, v) => acc + v.size, 0) - b.reduce((acc, v) => acc + v.size, 0);
+    return first !== 0 ? first : second;
+  });
+
+  // [['0,1'], ['0,2']] => Bool
+  // この関数では隣り合っているかどうかなどは判断しない
+  function canGroup(xys) {
+    return Array.from(xys).map(xy => xy.split(',')).every(_ => {
+      const label = kvi.colHeader[_[0]].v + kvi.rowHeader[_[1]].v;
+      return tableMap.value[label] !== '0';
+    });
+  }
+
+  const group = acc5[0];
+  // .map((_) =>
+  //   Array.from(_)
+  //     .map((_) =>
+  //       _.split(',')
+  //         .map((_) => parseInt(_) + 1)
+  //         .join(',')
+  //     )
+  //     .sort()
+  //     .join('@')
+  // );
+
+  return { canGroup, group, oneSet };
 }
 </script>
 

@@ -62,7 +62,7 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, onMounted, computed, watch } from 'vue';
+import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue';
 import { useI18n } from "vue-i18n";
 import KarnaughMaster from './KarnaughMaster.vue';
 const { t } = useI18n({ useScope: "global" });
@@ -75,17 +75,17 @@ const props = defineProps({
     },
     headers: [],
     body: [],
-    groups: [{
-      grp: [[]],
-      rowGrp: [[]],
-      colGrp: [[]],
-      allGrp: [[]],
-    }]
+    groups: [[{
+      grp: [],
+      rowGrp: [],
+      colGrp: [],
+      allGrp: [],
+    }]],
+    outIdx: Number
   },
 });
 const emit = defineEmits(["grouped"]);
 defineExpose({ changeCell, updateMsg, reset, deletedTab });
-
 const optExport = [
   { title: 'PNG保存', icon: 'mdi-download', handlar: () => save('png') },
   { title: 'SVG保存', icon: 'mdi-download', handlar: () => save('svg') },
@@ -119,6 +119,7 @@ const tabItems = computed(() => {
     key: `tb${t.outName}${idx}`,
   }));
 });
+
 
 const activeKarnaugh = computed(() => karnaughs.value[selectedTab.value]);
 
@@ -156,9 +157,9 @@ function deselection() {
   activeKarnaugh.value.deselection();
 }
 
-function autoGrouping() {
+async function autoGrouping() {
   reset();
-  activeKarnaugh.value.autoGrouping();
+  await activeKarnaugh.value.autoGrouping();
   msg.value = t(`囲みました。自分でも確認してね。`);
 }
 
@@ -168,10 +169,9 @@ function save(ext) {
 }
 
 function reset(idx) {
-  activeKarnaugh.value.reset();
-  if (idx >= 0 && idx < tabItem.length) {
-    msg.value = t(`タブ@@@の内容をリセットしました。`).replace('@@@', activeKarnaugh.value.name);
-  }
+  const karnaugh = idx ? karnaughs.value[idx] : activeKarnaugh.value;
+  karnaugh?.reset();
+  msg.value = t(`タブZZZの内容をリセットしました。`).replace('ZZZ', tabItems.value[selectedTab.value].name);
 }
 
 function updateMsg(_msg) {
@@ -199,6 +199,23 @@ function deletedTab(n) {
 
 onMounted(() => {
   selectedTab.value = 0;
+});
+
+// タブを強制的にレンダリングさせる
+// これをしないと出力を子要素を参照できない箇所が出てくる
+// UI的にも奇妙な挙動をするが妥協
+watch(() => props.tables.length, () => {
+  const _selectedTab = selectedTab.value;
+  function render(idx) {
+    idx = (idx % props.tables.length);
+    if (idx === _selectedTab) {
+      selectedTab.value = _selectedTab;
+      return;
+    };
+    selectedTab.value = idx;
+    nextTick(() => render((idx + 1)));
+  }
+  render(_selectedTab + 1);
 });
 </script>
 
