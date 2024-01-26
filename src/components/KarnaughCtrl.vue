@@ -169,7 +169,7 @@ function save(ext) {
 }
 
 function reset(idx) {
-  const karnaugh = idx ? karnaughs.value[idx] : activeKarnaugh.value;
+  const karnaugh = idx !== undefined ? karnaughs.value[idx] : activeKarnaugh.value;
   karnaugh?.reset();
   msg.value = t(`タブZZZの内容をリセットしました。`).replace('ZZZ', tabItems.value[selectedTab.value].name);
 }
