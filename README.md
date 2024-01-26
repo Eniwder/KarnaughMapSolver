@@ -1,10 +1,10 @@
-[![GitHub Pages](https://github.com/Eniwder/KarnaughMapSolver/actions/workflows/gh-pages.yml/badge.svg)](https://github.com/Eniwder/KarnaughMapSolver/actions/workflows/gh-pages.yml)
+[![GitHub Pages](https://github.com/Eniwder/KarnaughMapSolver/actions/workflows/static.yml/badge.svg)](https://github.com/Eniwder/KarnaughMapSolver/actions/workflows/gh-pages.yml)
 ![](https://img.shields.io/badge/vue-3.x-brightgreen.svg)
 
 [README in English](https://github.com/Eniwder/KarnaughMapSolver/blob/main/README-en.md)
 
 # カルノー図の作成を補助するツール
-https://eniwder.github.io/KarnaughMapSolver/index.html
+https://eniwder.github.io/KarnaughMapSolver/
 
 ## 機能改修中のためバグってるかもしれません。バグってたら教えてください！！
 
@@ -20,6 +20,7 @@ https://eniwder.github.io/KarnaughMapSolver/index.html
 ## 更新履歴
 - 2023/01/30 カルノー図の右上にある「︙」ボタンから表示を少し変えれるようになりました。
 - 2023/10/14 入力変数名の文字数制限を撤廃しました。
+- 2024/01/27 6変数まで入力できるようになりました。ついでにたくさん微修正。
 
 
 ## バグ、要望など
