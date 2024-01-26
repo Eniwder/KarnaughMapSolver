@@ -208,7 +208,6 @@ async function loadFile(event) {
 
 function grouped(event) {
   const { oidx, groups } = event;
-  console.log(oidx, groups, activeTab.sheets.groups);
   Object.keys(groups).forEach(key => {
     activeTab.sheets.groups[oidx][key] = groups[key];
   });
