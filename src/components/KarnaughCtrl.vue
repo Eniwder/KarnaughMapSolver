@@ -20,7 +20,7 @@
                         style="height: 48px"></v-switch>
                     </span>
                   </template>
-                  <span>{{ item.disc }}</span>
+                  <span>{{ $t(item.disc) }}</span>
                 </v-tooltip>
               </v-list-item>
               <v-list-subheader dark>{{ $t('図の出力') }}</v-list-subheader>
@@ -140,13 +140,13 @@ const viewOpt = reactive([
     key: 'AB_or_BA',
     label: 'A/B ↔ B/A',
     value: false,
-    disc: t('入力の描画順序を入れ替えます。'),
+    disc: '入力の描画順序を入れ替えます。',
   },
   {
     key: 'A_BC_or_A_BC',
     label: 'A/BC ↔ AB/C',
     value: false,
-    disc: t('3変数の時に入力の区切り位置を変更します。'),
+    disc: '3入力の時に入力の区切り位置を変更します。',
   },
 ]);
 const advancedOpt = ref(false);
