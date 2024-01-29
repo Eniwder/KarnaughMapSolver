@@ -480,61 +480,17 @@ async function autoGrouping() {
     .forEach(rg => acc7[1].colGrp.push(rg));
 
   // console.log(acc7);
-  acc7.forEach((grps, idx) => {
-    Object.keys(grps).forEach(gkey => {
-      _kms.push(grps[gkey].map((v, subIdx) => `${idx},${gkey},${subIdx}`));
-    });
-  });
-  const kms = _kms.flat();
-
-  const getGrpComb = (arr, minComb) => {
-    const getAns = (combs) => {
-      return combs.filter(comb => {
-        const fillSet = [new Set(), new Set(), new Set(), new Set()];
-        comb.forEach(ks => {
-          const [_idx, key, subIdx] = ks.split(',');
-          const idx = parseInt(_idx);
-          const grp = acc7[idx][key][subIdx].values();
-          for (const g of grp) {
-            fillSet[idx].add(g);
-            if (key === 'rowGrp') {
-              fillSet[idx + ((idx % 2) === 0 ? 1 : -1)].add(g); // 0<-->1, 2<-->3
-            } else if (key === 'colGrp') {
-              fillSet[idx + ((idx < 2) ? 2 : -2)].add(g); // 0<-->2, 1<-->3
-            } else if (key === 'allGrp') {
-              fillSet[(idx + 1) % 4].add(g);
-              fillSet[(idx + 2) % 4].add(g);
-              fillSet[(idx + 3) % 4].add(g);
-            }
-          }
-        });
-        return oneSets.every((os, idx) => isSuperset(fillSet[idx], os, true));
-      });
-    };
-    const helper = (n) => {
-      if (n >= kms.length) return getAns(combination(kms, n));
-      else {
-        const ans = getAns(combination(kms, n));
-        if (ans.length > 0) return ans;
-        else return helper(n + 1);
-      }
-    };
-    return helper(minComb);
-  };
+  const kms = acc7.flatMap((grps, idx) => Object.keys(grps).flatMap(gkey => grps[gkey].map((v, subIdx) => [idx, gkey, subIdx])));
 
   const weights = { grp: 0, rowGrp: 1, colGrp: 1, allGrp: 3 };
-  const maxComb = acc6.reduce((acc, v) => acc + Object.values(v).reduce((acc, v) => acc + v.length, 0), 0);
-  const minComb = Math.max(Math.max(...acc6.map(grps => Object.values(grps).reduce((acc, v) => acc + v.length, 0))),
-    maxComb - acc7.reduce((acc, v) => acc + Object.keys(v).reduce((acc, k) => acc + v[k].length * weights[k], 0), 0));
-  // console.log(minComb);
+  const maxComb = acc7.reduce((acc, v) => acc + Object.values(v).reduce((acc, v) => acc + v.length, 0), 0);
 
   const task = (arg) => {
-    const { acc7, minComb, kms, oneSets } = arg;
+    const { vms, maxComb, kms, oneSets } = arg;
     const isSuperset = (set, subset, eq) => {
-      if (subset)
-        for (let elem of subset) {
-          if (!set.has(elem)) return false;
-        }
+      for (let elem of subset) {
+        if (!set.has(elem)) return false;
+      }
       return eq || set.size !== subset.size; // 「⊆」ではなく「⊂」とする
     };
     function combination(nums, k) {
@@ -554,67 +510,61 @@ async function autoGrouping() {
       }
       return ans;
     }
-    const getGrpComb = (arr, minComb) => {
-      const getAns = (combs) => {
-        return combs.filter(comb => {
-          const fillSet = [new Set(), new Set(), new Set(), new Set()];
-          comb.forEach(ks => {
-            const [_idx, key, subIdx] = ks.split(',');
-            const idx = parseInt(_idx);
-            Array.from(acc7[idx][key][subIdx]).forEach(g => {
-              fillSet[idx].add(g);
-              if (key === 'rowGrp') {
-                fillSet[idx + ((idx % 2) === 0 ? 1 : -1)].add(g); // 0<-->1, 2<-->3
-              } else if (key === 'colGrp') {
-                fillSet[idx + ((idx < 2) ? 2 : -2)].add(g); // 0<-->2, 1<-->3
-              } else if (key === 'allGrp') {
-                fillSet[(idx + 1) % 4].add(g);
-                fillSet[(idx + 2) % 4].add(g);
-                fillSet[(idx + 3) % 4].add(g);
-              }
-            });
+    const getAns = (combs, funcKey) => {
+      const [idxMapRow, idxMapCol] = [[1, 0, 3, 2], [2, 3, 0, 1]];
+      return combs[funcKey](comb => {
+        const fillSet = [new Set(), new Set(), new Set(), new Set()];
+        comb.forEach(ks => {
+          const [idx, key, subIdx] = ks;
+          vms[idx][key][subIdx].forEach(g => {
+            fillSet[idx].add(g);
+            if (key === 'rowGrp') {
+              fillSet[idxMapRow[idx]].add(g); // 0<-->1, 2<-->3
+            } else if (key === 'colGrp') {
+              fillSet[idxMapCol[idx]].add(g); // 0<-->2, 1<-->3
+            } else if (key === 'allGrp') {
+              fillSet[(idx + 1) % 4].add(g);
+              fillSet[(idx + 2) % 4].add(g);
+              fillSet[(idx + 3) % 4].add(g);
+            }
           });
-          return oneSets.every((os, idx) => isSuperset(fillSet[idx], os, true));
         });
-      };
-      const helper = (n) => {
-        if (n >= kms.length) return getAns(combination(kms, n));
-        else {
-          const ans = getAns(combination(kms, n));
-          if (ans.length > 0) return ans;
-          else return helper(n + 1);
-        }
-      };
-      return helper(minComb);
+        return oneSets.every((os, idx) => isSuperset(fillSet[idx], os, true));
+      });
     };
-    return getGrpComb(acc7, minComb);
+    const helper = (n) => {
+      const ans = getAns(combination(kms, n), 'some');
+      if (ans) return helper(n - 1);
+      else return getAns(combination(kms, n + 1), 'filter');
+    };
+    return helper(maxComb - 1); // 処理の都合上、上から順に見ていく方が格段に早い(二分探索より早いことが多いはず)
   };
   if ((tableData.meta.inputNum === 6) && (kms.length > 10)) {
     emit('msg', t('囲んでいます。複雑なので結構時間がかかるかも。'));
     isAutoGrouping.value = true;
   }
-
-  const acc8 = window.Worker ? await webWorkerAsync(task, { acc7, minComb, kms, oneSets }) : getGrpComb(acc7, minComb);
+  // console.time('autoGrouping');
+  const taskArg = { vms: acc7, maxComb, kms, oneSets };
+  const acc8 = window.Worker ? await webWorkerAsync(task, taskArg) : task(taskArg);
+  // console.timeEnd('autoGrouping');
   isAutoGrouping.value = false;
   // console.log(acc8);
 
   // 項数が同じ場合は、allGrp, colGrp=rowGrpの順で数が多くなるようにする
   const getScore = keys => {
-    const [idx, key, subIdx] = keys.split(',');
+    const [idx, key, subIdx] = keys;
     const grp = Array.from(acc7[idx][key][subIdx]);
     const weight = key === 'allGrp' ? 4 :
       (key === 'colGrp' || key === 'rowGrp') ? 2 : 1;
     return grp.length * weight;
   };
-
   acc8.sort((a, b) => {
     const first = a.length - b.length;
     const second = b.reduce((acc, v) => acc + getScore(v), 0) - a.reduce((acc, v) => acc + getScore(v), 0);
     return first !== 0 ? first : second;
   });
   acc8[0].forEach(ks => {
-    const [_idx, key, subIdx] = ks.split(',');
-    const idx = parseInt(_idx);
+    const [idx, key, subIdx] = ks;
     const grp = Array.from(acc7[idx][key][subIdx])
       .map((_) =>
         _.split(',')
