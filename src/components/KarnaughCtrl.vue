@@ -4,7 +4,7 @@
       <v-card>
         <v-tabs bg-color="indigo-lighten-3" v-model="selectedTab" slider-color="indigo-lighten-1">
           <v-tab v-for="tab in tabItems" :key="tab.key">{{ tab.name }}</v-tab>
-          <v-menu icon class="optView optMenu" :close-on-content-click="false">
+          <v-menu icon class="viewOpt optMenu" :close-on-content-click="false">
             <template v-slot:activator="{ props }">
               <v-btn icon variant="text" v-bind="props" style="margin: auto 8px auto auto; width: 48px; height: 48px">
                 <v-icon>mdi-dots-vertical</v-icon>
@@ -12,7 +12,7 @@
             </template>
             <v-list>
               <v-list-subheader dark>{{ $t('表示設定') }}</v-list-subheader>
-              <v-list-item v-for="(item, index) in optView" :key="item.key">
+              <v-list-item v-for="(item, index) in viewOpt" :key="item.key">
                 <v-tooltip bottom open-delay="600">
                   <template v-slot:activator="{ props }">
                     <span v-bind="props">
@@ -27,6 +27,11 @@
               <v-list-item v-for="(item, index) in optExport" :key="index" :prepend-icon="item.icon"
                 :title="$t(item.title)" @click="item.handlar">
               </v-list-item>
+              <v-list-subheader dark>{{ $t('その他') }}</v-list-subheader>
+              <v-list-item>
+                <v-switch v-model="advancedOpt" inset :label="$t('高度な設定を表示')" theme="light" color="white"
+                  style="height: 48px"></v-switch>
+              </v-list-item>
             </v-list>
           </v-menu>
         </v-tabs>
@@ -34,7 +39,7 @@
         <v-window v-model="selectedTab">
           <v-window-item v-for="table in props.tables" :key="table.key" ref="tabItem">
             <v-card>
-              <KarnaughMaster :_tableData="table" :optView="optViewProps" @msg="updateMsg($event)"
+              <KarnaughMaster :_tableData="table" :viewOpt="viewOptProps" :drawOpt @msg="updateMsg($event)"
                 @grouped="grouped($event)" ref="karnaughs">
               </KarnaughMaster>
             </v-card>
@@ -57,6 +62,39 @@
         <v-btn elevation="2" color="indigo-lighten-4" @click="autoGrouping">{{
           $t('自動で囲む')
         }}</v-btn>
+      </v-row>
+      <v-row v-show="advancedOpt" @keydown="$event.stopPropagation()" class="advanced-opt">
+        <v-col cols="3"> <v-text-field type="number" step="any" min="18" max="100" :label="$t('セルのサイズ')"
+            v-model.number="_drawOpt.oneCell"></v-text-field> </v-col>
+        <v-col cols="3"><v-text-field type="number" step="any" min="0" max="24" :label="$t('図のパディング')"
+            v-model.number="_drawOpt.padding"></v-text-field></v-col>
+        <v-col cols="3"> <v-text-field type="string" :label="$t('ラベルのフォント名')" v-model="_drawOpt.fontInFam"></v-text-field>
+        </v-col>
+        <v-col cols="3"> <v-text-field type="number" step="any" min="4" max="64" :label="$t('ラベルのフォントサイズ')"
+            v-model.number="_drawOpt.fontLabelSize"></v-text-field> </v-col>
+        <v-col cols="3"> <v-text-field type="string" :label="$t('テーブルのフォント名')"
+            v-model="_drawOpt.fontBodyFam"></v-text-field> </v-col>
+        <v-col cols="3"> <v-text-field type="number" step="any" min="4" max="64" :label="$t('テーブルのフォントサイズ')"
+            v-model.number="_drawOpt.fontBodySize"></v-text-field> </v-col>
+        <v-col cols="3"><v-text-field type="number" step="any" min="1" max="10" :label="$t('グループの線の太さ')"
+            v-model.number="_drawOpt.strokeMap.grp.sw"></v-text-field></v-col>
+        <v-col cols="3"><v-text-field type="string" :label="$t('グループの線の色')"
+            v-model="_drawOpt.strokeMap.grp.sc"></v-text-field></v-col>
+        <v-col cols="3"><v-text-field type="number" step="any" min="1" max="10" :label="$t('グループの線の太さ') + 2"
+            v-model.number="_drawOpt.strokeMap.rowGrp.sw"></v-text-field></v-col>
+        <v-col cols="3"><v-text-field type="string" :label="$t('グループの線の色') + 2"
+            v-model="_drawOpt.strokeMap.rowGrp.sc"></v-text-field></v-col>
+        <v-col cols="3"><v-text-field type="number" step="any" min="1" max="10" :label="$t('グループの線の太さ') + 3"
+            v-model.number="_drawOpt.strokeMap.colGrp.sw"></v-text-field></v-col>
+        <v-col cols="3"><v-text-field type="string" :label="$t('グループの線の色') + 3"
+            v-model="_drawOpt.strokeMap.colGrp.sc"></v-text-field></v-col>
+        <v-col cols="3"><v-text-field type="number" step="any" min="1" max="10" :label="$t('グループの線の太さ') + 4"
+            v-model.number="_drawOpt.strokeMap.allGrp.sw"></v-text-field></v-col>
+        <v-col cols="3"><v-text-field type="string" :label="$t('グループの線の色') + 4"
+            v-model="_drawOpt.strokeMap.allGrp.sc"></v-text-field></v-col>
+        <v-col cols="4"> <v-btn elevation="2" color="indigo-lighten-4" @click="resetAdancedSetting">{{
+          $t('設定をデフォルトに戻す') }}</v-btn></v-col>
+
       </v-row>
     </v-card>
   </div>
@@ -97,7 +135,7 @@ const selectedTab = ref(0);
 const tabItem = ref(null);
 const karnaughs = ref(null);
 // const mathjax = ref('');
-const optView = reactive([
+const viewOpt = reactive([
   {
     key: 'AB_or_BA',
     label: 'A/B ↔ B/A',
@@ -111,6 +149,64 @@ const optView = reactive([
     disc: t('3変数の時に入力の区切り位置を変更します。'),
   },
 ]);
+const advancedOpt = ref(false);
+const DrawOptDefault = {
+  fontInFam: 'Meiryo',
+  fontLabelSize: 16,
+  fontBodyFam: 'Arial',
+  fontBodySize: 24,
+  oneCell: 72,
+  padding: 8, // paddingがないと外枠の太線をきれいに引けない
+  strokeMap: {
+    grp: {
+      sw: 1,
+      sc: 'black'
+    },
+    rowGrp: {
+      sw: 2,
+      sc: '#FFC107'
+    },
+    colGrp: {
+      sw: 3,
+      sc: '#2196F3'
+    },
+    allGrp: {
+      sw: 4,
+      sc: '#F44336'
+    }
+  }
+};
+const _drawOpt = reactive(JSON.parse(JSON.stringify(DrawOptDefault)));
+
+const in2MinMax = (v, min, max) => v < min ? min : v > max ? max : v;
+const strGetOrElse = (str, v) => (str && str !== '') ? str : v;
+const validColorOrElse = (str, v) => CSS.supports('color', str) ? str : v;
+const drawOpt = computed(() => ({
+  fontInFam: _drawOpt.fontInFam || DrawOptDefault.fontInFam,
+  fontLabelSize: in2MinMax(_drawOpt.fontLabelSize, 4, 64),
+  fontBodySize: in2MinMax(_drawOpt.fontBodySize, 4, 64),
+  fontBodyFam: strGetOrElse(_drawOpt.fontBodyFam, DrawOptDefault.fontBodyFam),
+  oneCell: in2MinMax(_drawOpt.oneCell, 18, 200),
+  padding: in2MinMax(_drawOpt.padding, 0, 24),
+  strokeMap: {
+    grp: {
+      sw: in2MinMax(_drawOpt.strokeMap.grp.sw, 1, 10),
+      sc: validColorOrElse(_drawOpt.strokeMap.grp.sc, DrawOptDefault.strokeMap.grp.sc)
+    },
+    rowGrp: {
+      sw: in2MinMax(_drawOpt.strokeMap.rowGrp.sw, 1, 10),
+      sc: validColorOrElse(_drawOpt.strokeMap.rowGrp.sc, DrawOptDefault.strokeMap.rowGrp.sc)
+    },
+    colGrp: {
+      sw: in2MinMax(_drawOpt.strokeMap.colGrp.sw, 1, 10),
+      sc: validColorOrElse(_drawOpt.strokeMap.colGrp.sc, DrawOptDefault.strokeMap.colGrp.sc)
+    },
+    allGrp: {
+      sw: in2MinMax(_drawOpt.strokeMap.allGrp.sw, 1, 10),
+      sc: validColorOrElse(_drawOpt.strokeMap.allGrp.sc, DrawOptDefault.strokeMap.allGrp.sc)
+    }
+  }
+}));
 
 const tabItems = computed(() => {
   if (!props.tables.map) return [];
@@ -123,13 +219,17 @@ const tabItems = computed(() => {
 
 const activeKarnaugh = computed(() => karnaughs.value[selectedTab.value]);
 
-const optViewProps = computed(() => {
-  return Object.entries(optView).reduce((acc, [k, v]) => {
+const viewOptProps = computed(() => {
+  return Object.entries(viewOpt).reduce((acc, [k, v]) => {
     // console.log(v.key v.value)
     acc[v.key] = v.value;
     return acc;
   }, {});
 });
+
+function resetAdancedSetting() {
+  Object.assign(_drawOpt, JSON.parse(JSON.stringify(DrawOptDefault)));
+}
 
 function exportData() {
   props.tables.modified = false;
@@ -243,6 +343,10 @@ watch(() => props.tables.length, () => {
 .msg {
   margin: 0;
   margin-bottom: -32px;
+}
+
+.advanced-opt {
+  padding: 16px
 }
 </style>
 

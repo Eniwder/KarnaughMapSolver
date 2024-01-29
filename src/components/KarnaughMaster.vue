@@ -2,22 +2,22 @@
   <div class="karnaugh">
     <svg :width="svgWidth" :height="svgHeight" ref="svgRootRef">
       <template v-if="tableData.meta.inputNum > 4">
-        <text :x="kvi.dimColHeaderLabel.x" :y="kvi.dimColHeaderLabel.y" :font-size="kvi.fontInSize"
+        <text :x="kvi.dimColHeaderLabel.x" :y="kvi.dimColHeaderLabel.y" :font-size="kvi.fontBodySize"
           :font-family="kvi.fontLabelSize" text-anchor="middle" dominant-baseline="central" fill="black">
           {{ kvi.dimColHeaderLabel.v }} </text>
         <text v-for="v in kvi.dimColHeader" :x="v.x" :y="v.y" text-anchor="middle" dominant-baseline="central"
-          fill="black" :font-size="kvi.fontInSize">{{
+          fill="black" :font-size="kvi.fontBodySize">{{
             v.v }}</text>
       </template>
       <template v-if="tableData.meta.inputNum > 5">
         <line :x1="kvi.padding + 8" :y1="kvi.padding + 8" :x2="offsets[0].x" :y2="offsets[0].y" stroke="black"
           stroke-width="1" />
-        <text :x="kvi.dimRowHeaderLabel.x" :y="kvi.dimRowHeaderLabel.y" :font-size="kvi.fontInSize"
+        <text :x="kvi.dimRowHeaderLabel.x" :y="kvi.dimRowHeaderLabel.y" :font-size="kvi.fontBodySize"
           :font-family="kvi.fontLabelSize" text-anchor="middle" dominant-baseline="central" fill="black">
           {{ kvi.dimRowHeaderLabel.v }}
         </text>
         <text v-for="v in kvi.dimRowHeader" :x="v.x" :y="v.y" text-anchor="middle" dominant-baseline="central"
-          fill="black" :font-size="kvi.fontInSize">{{ v.v }}</text>
+          fill="black" :font-size="kvi.fontBodySize">{{ v.v }}</text>
       </template>
       <KarnaughChild v-for="(v, idx) in subTables" :tableData="v" :offset="offsets[idx]" :idx="idx" :key="idx"
         ref="karnaughChildRef">
@@ -68,9 +68,36 @@ const props = defineProps({
       allGrp: [],
     }],
   },
-  optView: {
+  viewOpt: {
     AB_or_BA: Boolean,
     A_BC_or_A_BC: Boolean,
+  },
+  drawOpt: {
+    fontInFam: String,
+    fontLabelSize: Number,
+    fontBodySize: Number,
+    fontBodyFam: String,
+    fontBodySize: Number,
+    oneCell: Number,
+    padding: Number,
+    strokeMap: {
+      grp: {
+        sw: Number,
+        sc: String
+      },
+      rowGrp: {
+        sw: Number,
+        sc: String
+      },
+      colGrp: {
+        sw: Number,
+        sc: String
+      },
+      allGrp: {
+        sw: Number,
+        sc: String
+      }
+    }
   }
 });
 
@@ -83,7 +110,7 @@ const groups = reactive([]);
 
 const tableData = computedReactive(() => {
   // 入力ラベルの描画順序を変えない場合は何もしない
-  if (!props.optView.AB_or_BA) return props._tableData;
+  if (!props.viewOpt.AB_or_BA) return props._tableData;
   // 入力ラベルの描画順序を変える場合は中のデータ順序を入れ替える
   // 描画ロジックは変更しない
   function replaceTableData(td, idxs) {
@@ -101,9 +128,9 @@ const tableData = computedReactive(() => {
   const indices =
     props._tableData.meta.inputNum === 2
       ? [1, 0]
-      : props._tableData.meta.inputNum === 3 && props.optView.A_BC_or_A_BC
+      : props._tableData.meta.inputNum === 3 && props.viewOpt.A_BC_or_A_BC
         ? [1, 2, 0]
-        : props._tableData.meta.inputNum === 3 && !props.optView.A_BC_or_A_BC
+        : props._tableData.meta.inputNum === 3 && !props.viewOpt.A_BC_or_A_BC
           ? [2, 0, 1]
           : props._tableData.meta.inputNum === 4
             ? [2, 3, 0, 1]
@@ -155,38 +182,10 @@ const subTables = computed(() => {
   }
 });
 // TODO ABCD/EF <-> AB/CDEF (ABCDE/F <-> A/BCDEF)
-// TODO 詳細設定としてKCtrlから以下を渡せるようにする
-const drawOpt = {
-  fontInFam: 'Meiryo',
-  fontLabelSize: 16,
-  fontInSize: 24,
-  fontBodyFam: 'Arial',
-  fontBodySize: 24,
-  oneCell: 72,
-  padding: 8, // paddingがないと外枠の太線をきれいに引けない
-  strokeMap: {
-    grp: {
-      sw: 1,
-      sc: 'black'
-    },
-    rowGrp: {
-      sw: 2,
-      sc: '#FFC107'
-    },
-    colGrp: {
-      sw: 3,
-      sc: '#2196F3'
-    },
-    allGrp: {
-      sw: 4,
-      sc: '#F44336'
-    }
-  }
-};
 
-const kvi = computedReactive(() => useKarnaghViewInfo(tableData, drawOpt, props.optView));
+const kvi = computedReactive(() => useKarnaghViewInfo(tableData, props.drawOpt, props.viewOpt));
 provide('karnaughViewInfo', readonly(kvi));
-const baseOffset = computed(() => props._tableData.meta.inputNum <= 4 ? 0 : drawOpt.oneCell);
+const baseOffset = computed(() => props._tableData.meta.inputNum <= 4 ? 0 : props.drawOpt.oneCell);
 const svgWidth = computed(() =>
   baseOffset.value + (props._tableData.meta.inputNum <= 4 ? kvi.width :
     (kvi.width * 2 + figureMargin + kvi.outerInNameWidth))
@@ -385,40 +384,10 @@ function deselection() {
 }
 
 async function autoGrouping() {
-  const isSuperset = (set, subset, eq) => {
-    for (let elem of subset) {
-      if (!set.has(elem)) return false;
-    }
-    return eq || set.size !== subset.size; // 「⊆」ではなく「⊂」とする
-  };
   function eqSet(as, bs) {
     if (as.size !== bs.size) return false;
     for (let a of as) if (!bs.has(a)) return false;
     return true;
-  }
-  function difference(setA, setB) {
-    let _difference = new Set(setA);
-    for (let elem of setB) {
-      _difference.delete(elem);
-    }
-    return _difference;
-  }
-  function combination(nums, k) {
-    let ans = [];
-    if (nums.length < k) return [];
-    if (k === 1) {
-      for (let i = 0; i < nums.length; i++) {
-        ans[i] = [nums[i]];
-      }
-    } else {
-      for (let i = 0; i < nums.length - k + 1; i++) {
-        let row = combination(nums.slice(i + 1), k - 1);
-        for (let j = 0; j < row.length; j++) {
-          ans.push([nums[i]].concat(row[j]));
-        }
-      }
-    }
-    return ans;
   }
   const getDiff = (a, b) => a.filter(aa => !b.some(bb => eqSet(aa, bb))); // a-b
 
@@ -694,11 +663,11 @@ function regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
   ));
 }
 
-watch(() => props.optView.AB_or_BA, (newV, oldV) => {
-  regroup4changeView(newV, oldV, props.optView.A_BC_or_A_BC, props.optView.A_BC_or_A_BC);
+watch(() => props.viewOpt.AB_or_BA, (newV, oldV) => {
+  regroup4changeView(newV, oldV, props.viewOpt.A_BC_or_A_BC, props.viewOpt.A_BC_or_A_BC);
 });
-watch(() => props.optView.A_BC_or_A_BC, (newV, oldV) => {
-  regroup4changeView(props.optView.AB_or_BA, props.optView.AB_or_BA, newV, oldV);
+watch(() => props.viewOpt.A_BC_or_A_BC, (newV, oldV) => {
+  regroup4changeView(props.viewOpt.AB_or_BA, props.viewOpt.AB_or_BA, newV, oldV);
 });
 </script>
 

@@ -22,7 +22,7 @@
       text-anchor="middle" dominant-baseline="central">
       {{ kvi.colHeaderLabel.v }}
     </text>
-    <text v-for="ch in kvi.colHeader" :key="ch.key" :x="ch.x + kvi.inNameWidth" :y="ch.y" :font-size="kvi.fontInSize"
+    <text v-for="ch in kvi.colHeader" :key="ch.key" :x="ch.x + kvi.inNameWidth" :y="ch.y" :font-size="kvi.fontBodySize"
       :font-family="kvi.fontInFam" text-anchor="middle" dominant-baseline="central">
       {{ ch.v }}
     </text>
@@ -31,8 +31,8 @@
       text-anchor="middle" dominant-baseline="central">
       {{ kvi.rowHeaderLabel.v }}
     </text>
-    <text v-for="rh in kvi.rowHeader" :key="rh.key" :x="rh.x + kvi.inNameWidth / 2" :y="rh.y" :font-size="kvi.fontInSize"
-      :font-family="kvi.fontInFam" text-anchor="middle" dominant-baseline="central">
+    <text v-for="rh in kvi.rowHeader" :key="rh.key" :x="rh.x + kvi.inNameWidth / 2" :y="rh.y"
+      :font-size="kvi.fontBodySize" :font-family="kvi.fontInFam" text-anchor="middle" dominant-baseline="central">
       {{ rh.v }}
     </text>
     <!-- table body -->
@@ -113,8 +113,8 @@ const bezs = computed(() => circles.value.filter((_) => _.type === 'bez').sort((
 const circles = computed(() => {
   const ret = [];
   const addArc = (x1, y1, x2, y2, w, h, f2, sw, sc) => {
-    const [ajx, px] = x1 === x2 ? [kvi.oneCell / 2.4, 0] : [-1 - sw, 2];
-    const [ajy, py] = y1 == y2 ? [kvi.oneCell / 2.4, 0] : [-1 - sw, 2];
+    const [ajx, px] = x1 === x2 ? [kvi.oneCell / 2.4, 0] : [-1 - Math.min(sw, 4), 2];
+    const [ajy, py] = y1 == y2 ? [kvi.oneCell / 2.4, 0] : [-1 - Math.min(sw, 4), 2];
     ret.push({
       type: 'arc',
       x1: kvi.left + (x1 + 1) * kvi.oneCell + kvi.inNameWidth + px,
