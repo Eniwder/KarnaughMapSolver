@@ -414,7 +414,7 @@ function autoGrouping() {
   //     .join('@')
   // );
 
-  return { canGroup, group, oneSet };
+  return { canGroup, group, oneList };
 }
 </script>
 

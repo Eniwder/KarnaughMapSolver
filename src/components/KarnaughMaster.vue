@@ -295,10 +295,6 @@ const wordStr = computed(() => {
   );
 });
 
-function exportData() {
-  return { grp: group_ };
-}
-
 function copy4word() {
   navigator.clipboard.writeText(wordStr.value);
   emit('msg', t('数式をLaTeX形式でコピーしました。'));
@@ -400,14 +396,14 @@ async function autoGrouping() {
   });
 
   // 各4カルノー図
-  const { canGroups, _groups, oneSets } = karnaughChildRef.value.reduce((acc, v) => {
-    const { canGroup, group, oneSet } = v.autoGrouping();
+  const { canGroups, _groups, oneLists } = karnaughChildRef.value.reduce((acc, v) => {
+    const { canGroup, group, oneList } = v.autoGrouping();
     acc.canGroups.push(canGroup);
     acc._groups.push(group || []);
-    acc.oneSets.push(oneSet);
+    acc.oneLists.push(oneList);
     return acc;
-  }, { canGroups: [], _groups: [], oneSets: [] });
-  if (oneSets.every(_ => _.size === 0)) return;
+  }, { canGroups: [], _groups: [], oneLists: [] });
+  if (oneLists.every(_ => _.length === 0)) return;
   const acc6 = [];
   // groupにある値を改めてall,col,rowでくくる
   // その時、groupは他要素のdon't careとペアを組める
@@ -455,13 +451,7 @@ async function autoGrouping() {
   const maxComb = acc7.reduce((acc, v) => acc + Object.values(v).reduce((acc, v) => acc + v.length, 0), 0);
 
   const task = (arg) => {
-    const { vms, maxComb, kms, oneSets } = arg;
-    const isSuperset = (set, subset, eq) => {
-      for (let elem of subset) {
-        if (!set.has(elem)) return false;
-      }
-      return eq || set.size !== subset.size; // 「⊆」ではなく「⊂」とする
-    };
+    const { vms, maxComb, kms, oneLists } = arg;
     function combination(nums, k) {
       let ans = [];
       if (nums.length < k) return [];
@@ -482,23 +472,23 @@ async function autoGrouping() {
     const getAns = (combs, funcKey) => {
       const [idxMapRow, idxMapCol] = [[1, 0, 3, 2], [2, 3, 0, 1]];
       return combs[funcKey](comb => {
-        const fillSet = [new Set(), new Set(), new Set(), new Set()];
+        const fillSet = [[], [], [], []];
         comb.forEach(ks => {
           const [idx, key, subIdx] = ks;
           vms[idx][key][subIdx].forEach(g => {
-            fillSet[idx].add(g);
+            fillSet[idx].push(g);
             if (key === 'rowGrp') {
-              fillSet[idxMapRow[idx]].add(g); // 0<-->1, 2<-->3
+              fillSet[idxMapRow[idx]].push(g); // 0<-->1, 2<-->3
             } else if (key === 'colGrp') {
-              fillSet[idxMapCol[idx]].add(g); // 0<-->2, 1<-->3
+              fillSet[idxMapCol[idx]].push(g); // 0<-->2, 1<-->3
             } else if (key === 'allGrp') {
-              fillSet[(idx + 1) % 4].add(g);
-              fillSet[(idx + 2) % 4].add(g);
-              fillSet[(idx + 3) % 4].add(g);
+              fillSet[(idx + 1) % 4].push(g);
+              fillSet[(idx + 2) % 4].push(g);
+              fillSet[(idx + 3) % 4].push(g);
             }
           });
         });
-        return oneSets.every((os, idx) => isSuperset(fillSet[idx], os, true));
+        return oneLists.every((os, idx) => os.every(_ => fillSet[idx].includes(_)));
       });
     };
     const helper = (n) => {
@@ -512,10 +502,10 @@ async function autoGrouping() {
     emit('msg', t('囲んでいます。複雑なので結構時間がかかるかも。'));
     isAutoGrouping.value = true;
   }
-  // console.time('autoGrouping');
-  const taskArg = { vms: acc7, maxComb, kms, oneSets };
+  console.time('autoGrouping');
+  const taskArg = { vms: acc7, maxComb, kms, oneLists };
   const acc8 = window.Worker ? await webWorkerAsync(task, taskArg) : task(taskArg);
-  // console.timeEnd('autoGrouping');
+  console.timeEnd('autoGrouping');
   isAutoGrouping.value = false;
   // console.log(acc8);
 
