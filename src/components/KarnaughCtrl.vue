@@ -39,7 +39,7 @@
         <v-window v-model="selectedTab">
           <v-window-item v-for="table in props.tables" :key="table.key" ref="tabItem">
             <v-card>
-              <KarnaughMaster :_tableData="table" :viewOpt="viewOptProps" :drawOpt @msg="updateMsg($event)"
+              <KarnaughMaster :_tableData="table" :viewOpt="viewOptProps" :drawOpt="drawOpt" @msg="updateMsg($event)"
                 @grouped="grouped($event)" ref="karnaughs">
               </KarnaughMaster>
             </v-card>
@@ -68,10 +68,20 @@
             v-model.number="_drawOpt.oneCell"></v-text-field> </v-col>
         <v-col cols="3"><v-text-field type="number" step="any" min="0" max="24" :label="$t('図のパディング')"
             v-model.number="_drawOpt.padding"></v-text-field></v-col>
-        <v-col cols="3"> <v-text-field type="string" :label="$t('ラベルのフォント名')" v-model="_drawOpt.fontInFam"></v-text-field>
+        <v-col cols="3"> <v-text-field type="number" step="any" min="0" max="10" :label="$t('外周のボーダー幅')"
+            v-model.number="_drawOpt.outBorderSw"></v-text-field> </v-col>
+        <v-col cols="3"> <v-text-field type="number" step="any" min="0" max="10" :label="$t('セルのボーダー幅')"
+            v-model.number="_drawOpt.cellBorderSw"></v-text-field> </v-col>
+        <v-col cols="3"> <v-text-field type="string" :label="$t('ラベルのフォント名')"
+            v-model="_drawOpt.fontLabelFam"></v-text-field>
         </v-col>
         <v-col cols="3"> <v-text-field type="number" step="any" min="4" max="64" :label="$t('ラベルのフォントサイズ')"
             v-model.number="_drawOpt.fontLabelSize"></v-text-field> </v-col>
+        <v-col cols="3"> <v-text-field type="string" :label="$t('ヘッダーのフォント名')"
+            v-model="_drawOpt.fontInFam"></v-text-field>
+        </v-col>
+        <v-col cols="3"> <v-text-field type="number" step="any" min="4" max="64" :label="$t('ヘッダーのフォントサイズ')"
+            v-model.number="_drawOpt.fontInSize"></v-text-field> </v-col>
         <v-col cols="3"> <v-text-field type="string" :label="$t('テーブルのフォント名')"
             v-model="_drawOpt.fontBodyFam"></v-text-field> </v-col>
         <v-col cols="3"> <v-text-field type="number" step="any" min="4" max="64" :label="$t('テーブルのフォントサイズ')"
@@ -158,12 +168,16 @@ const viewOpt = reactive([
 ]);
 const advancedOpt = ref(false);
 const DrawOptDefault = {
+  oneCell: 72,
+  padding: 8, // paddingがないと外枠の太線をきれいに引けない
+  outBorderSw: 2,
+  cellBorderSw: 1,
   fontInFam: 'Meiryo',
+  fontInSize: 24,
+  fontLabelFam: 'Meiryo',
   fontLabelSize: 16,
   fontBodyFam: 'Arial',
   fontBodySize: 24,
-  oneCell: 72,
-  padding: 8, // paddingがないと外枠の太線をきれいに引けない
   strokeMap: {
     grp: {
       sw: 1,
@@ -186,31 +200,35 @@ const DrawOptDefault = {
 const _drawOpt = reactive(JSON.parse(JSON.stringify(DrawOptDefault)));
 
 const in2MinMax = (v, min, max) => v < min ? min : v > max ? max : v;
-const strGetOrElse = (str, v) => (str && str !== '') ? str : v;
-const validColorOrElse = (str, v) => CSS.supports('color', str) ? str : v;
+const validCssOrElse = (str, v, key) => (str && str !== '') && CSS.supports(key, str) ? str : v;
+// 各@inputの属性で値を修正することもできるが、入力値がすぐに修正されると入力感が気持ち悪くなるので入力データと実態を分ける
 const drawOpt = computed(() => ({
-  fontInFam: _drawOpt.fontInFam || DrawOptDefault.fontInFam,
-  fontLabelSize: in2MinMax(_drawOpt.fontLabelSize, 4, 64),
-  fontBodySize: in2MinMax(_drawOpt.fontBodySize, 4, 64),
-  fontBodyFam: strGetOrElse(_drawOpt.fontBodyFam, DrawOptDefault.fontBodyFam),
   oneCell: in2MinMax(_drawOpt.oneCell, 18, 200),
   padding: in2MinMax(_drawOpt.padding, 0, 24),
+  outBorderSw: in2MinMax(_drawOpt.outBorderSw, 0, 10),
+  cellBorderSw: in2MinMax(_drawOpt.cellBorderSw, 0, 10),
+  fontInFam: validCssOrElse(_drawOpt.fontInFam, DrawOptDefault.fontInFam, 'font-family'),
+  fontInSize: in2MinMax(_drawOpt.fontInSize, 4, 64),
+  fontLabelFam: validCssOrElse(_drawOpt.fontLabelFam, DrawOptDefault.fontLabelFam, 'font-family'),
+  fontLabelSize: in2MinMax(_drawOpt.fontLabelSize, 4, 64),
+  fontBodySize: in2MinMax(_drawOpt.fontBodySize, 4, 64),
+  fontBodyFam: validCssOrElse(_drawOpt.fontBodyFam, DrawOptDefault.fontBodyFam, 'font-family'),
   strokeMap: {
     grp: {
       sw: in2MinMax(_drawOpt.strokeMap.grp.sw, 1, 10),
-      sc: validColorOrElse(_drawOpt.strokeMap.grp.sc, DrawOptDefault.strokeMap.grp.sc)
+      sc: validCssOrElse(_drawOpt.strokeMap.grp.sc, DrawOptDefault.strokeMap.grp.sc, 'color')
     },
     rowGrp: {
       sw: in2MinMax(_drawOpt.strokeMap.rowGrp.sw, 1, 10),
-      sc: validColorOrElse(_drawOpt.strokeMap.rowGrp.sc, DrawOptDefault.strokeMap.rowGrp.sc)
+      sc: validCssOrElse(_drawOpt.strokeMap.rowGrp.sc, DrawOptDefault.strokeMap.rowGrp.sc, 'color')
     },
     colGrp: {
       sw: in2MinMax(_drawOpt.strokeMap.colGrp.sw, 1, 10),
-      sc: validColorOrElse(_drawOpt.strokeMap.colGrp.sc, DrawOptDefault.strokeMap.colGrp.sc)
+      sc: validCssOrElse(_drawOpt.strokeMap.colGrp.sc, DrawOptDefault.strokeMap.colGrp.sc, 'color')
     },
     allGrp: {
       sw: in2MinMax(_drawOpt.strokeMap.allGrp.sw, 1, 10),
-      sc: validColorOrElse(_drawOpt.strokeMap.allGrp.sc, DrawOptDefault.strokeMap.allGrp.sc)
+      sc: validCssOrElse(_drawOpt.strokeMap.allGrp.sc, DrawOptDefault.strokeMap.allGrp.sc, 'color')
     }
   }
 }));

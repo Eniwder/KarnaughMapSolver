@@ -4,7 +4,8 @@ const range = (n) => [...Array(n).keys()];
 // offsetに依存しないカルノー図の図形情報を管理する
 // あとは共通で使うオマケメソッド
 export function useKarnaghViewInfo(tableData, drawOpt, viewOpt) {
-  const { padding, fontInFam, fontLabelSize, oneCell, fontBodyFam, fontBodySize, strokeMap } = drawOpt;
+  const { padding, fontInFam, fontLabelSize, oneCell, fontBodyFam, fontBodySize,
+    strokeMap, fontInSize, fontLabelFam, outBorderSw, cellBorderSw } = drawOpt;
   const ctx = document.createElement('canvas').getContext('2d');
 
   // 列の数
@@ -160,7 +161,7 @@ export function useKarnaghViewInfo(tableData, drawOpt, viewOpt) {
 
   return {
     colIn, rowIn, width, height, left, top, right, bottom, inNameWidth, outerInNameWidth,
-    padding, fontInFam, fontLabelSize, oneCell, fontBodyFam, fontBodySize, strokeMap,
+    padding, fontInFam, fontLabelSize, oneCell, fontBodyFam, fontBodySize, fontInSize, fontLabelFam, strokeMap, outBorderSw, cellBorderSw,
     colHeaderLabel, colHeader, rowHeaderLabel, rowHeader, dimColHeaderLabel, dimColHeader, dimRowHeaderLabel, dimRowHeader,
     isAllNeighbor
   };

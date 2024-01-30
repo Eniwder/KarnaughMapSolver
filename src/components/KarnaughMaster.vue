@@ -2,22 +2,22 @@
   <div class="karnaugh">
     <svg :width="svgWidth" :height="svgHeight" ref="svgRootRef">
       <template v-if="tableData.meta.inputNum > 4">
-        <text :x="kvi.dimColHeaderLabel.x" :y="kvi.dimColHeaderLabel.y" :font-size="kvi.fontBodySize"
-          :font-family="kvi.fontLabelSize" text-anchor="middle" dominant-baseline="central" fill="black">
+        <text :x="kvi.dimColHeaderLabel.x" :y="kvi.dimColHeaderLabel.y" :font-size="kvi.fontLabelSize"
+          :font-family="kvi.fontLabelFam" text-anchor="middle" dominant-baseline="central" fill="black">
           {{ kvi.dimColHeaderLabel.v }} </text>
         <text v-for="v in kvi.dimColHeader" :x="v.x" :y="v.y" text-anchor="middle" dominant-baseline="central"
-          fill="black" :font-size="kvi.fontBodySize">{{
+          fill="black" :font-size="kvi.fontInSize">{{
             v.v }}</text>
       </template>
       <template v-if="tableData.meta.inputNum > 5">
         <line :x1="kvi.padding + 8" :y1="kvi.padding + 8" :x2="offsets[0].x" :y2="offsets[0].y" stroke="black"
-          stroke-width="1" />
-        <text :x="kvi.dimRowHeaderLabel.x" :y="kvi.dimRowHeaderLabel.y" :font-size="kvi.fontBodySize"
-          :font-family="kvi.fontLabelSize" text-anchor="middle" dominant-baseline="central" fill="black">
+          :stroke-width="kvi.cellBorderSw" />
+        <text :x="kvi.dimRowHeaderLabel.x" :y="kvi.dimRowHeaderLabel.y" :font-size="kvi.fontLabelSize"
+          :font-family="kvi.fontLabelFam" text-anchor="middle" dominant-baseline="central" fill="black">
           {{ kvi.dimRowHeaderLabel.v }}
         </text>
         <text v-for="v in kvi.dimRowHeader" :x="v.x" :y="v.y" text-anchor="middle" dominant-baseline="central"
-          fill="black" :font-size="kvi.fontBodySize">{{ v.v }}</text>
+          fill="black" :font-size="kvi.fontInSize">{{ v.v }}</text>
       </template>
       <KarnaughChild v-for="(v, idx) in subTables" :tableData="v" :offset="offsets[idx]" :idx="idx" :key="idx"
         ref="karnaughChildRef">
@@ -74,13 +74,16 @@ const props = defineProps({
     // ABCD_EF_or_AB_CDEF: Boolean,
   },
   drawOpt: {
-    fontInFam: String,
-    fontLabelSize: Number,
-    fontBodySize: Number,
-    fontBodyFam: String,
-    fontBodySize: Number,
     oneCell: Number,
     padding: Number,
+    outBorderSw: Number,
+    cellBorderSw: Number,
+    fontInFam: String,
+    fontInSize: Number,
+    fontLabelFam: String,
+    fontLabelSize: Number,
+    fontBodyFam: String,
+    fontBodySize: Number,
     strokeMap: {
       grp: {
         sw: Number,

@@ -4,35 +4,40 @@
     <rect :x="kvi.left - kvi.padding" :y="kvi.top - kvi.padding" :width="kvi.width" :height="kvi.height" stroke="none"
       fill="transparent" />
     <!-- 外枠 -->
-    <line :x1="kvi.left - 1" :y1="kvi.top" :x2="kvi.right + 1" :y2="kvi.top" stroke="black" stroke-width="2" />
-    <line :x1="kvi.left" :y1="kvi.top - 1" :x2="kvi.left" :y2="kvi.bottom + 1" stroke="black" stroke-width="2" />
-    <line :x1="kvi.left - 1" :y1="kvi.bottom" :x2="kvi.right + 1" :y2="kvi.bottom" stroke="black" stroke-width="2" />
-    <line :x1="kvi.right" :y1="kvi.top - 1" :x2="kvi.right" :y2="kvi.bottom + 1" stroke="black" stroke-width="2" />
+    <line :x1="kvi.left - kvi.outBorderSw / 2" :y1="kvi.top" :x2="kvi.right + kvi.outBorderSw / 2" :y2="kvi.top"
+      stroke="black" :stroke-width="kvi.outBorderSw" />
+    <line :x1="kvi.left" :y1="kvi.top - kvi.outBorderSw / 2" :x2="kvi.left" :y2="kvi.bottom + kvi.outBorderSw / 2"
+      stroke="black" :stroke-width="kvi.outBorderSw" />
+    <line :x1="kvi.left - kvi.outBorderSw / 2" :y1="kvi.bottom" :x2="kvi.right + kvi.outBorderSw / 2" :y2="kvi.bottom"
+      stroke="black" :stroke-width="kvi.outBorderSw" />
+    <line :x1="kvi.right" :y1="kvi.top - kvi.outBorderSw / 2" :x2="kvi.right" :y2="kvi.bottom + kvi.outBorderSw / 2"
+      stroke="black" :stroke-width="kvi.outBorderSw" />
     <!-- grid col -->
     <line v-for="col in 2 * kvi.colIn" :key="'col' + col" :x1="col * kvi.oneCell + kvi.left + kvi.inNameWidth"
-      :y1="kvi.top" :x2="col * kvi.oneCell + kvi.left + kvi.inNameWidth" :y2="kvi.bottom" stroke="black" />
+      :y1="kvi.top" :x2="col * kvi.oneCell + kvi.left + kvi.inNameWidth" :y2="kvi.bottom" stroke="black"
+      :stroke-width="kvi.cellBorderSw" />
     <!-- grid row -->
     <line v-for="row in 2 * kvi.rowIn" :key="'row' + row" :x1="kvi.left" :y1="row * kvi.oneCell + kvi.top" :x2="kvi.right"
-      :y2="row * kvi.oneCell + kvi.top" stroke="black" />
+      :y2="row * kvi.oneCell + kvi.top" stroke="black" :stroke-width="kvi.cellBorderSw" />
     <!-- separate input -->
     <line :x1="kvi.left" :y1="kvi.top" :x2="kvi.left + kvi.oneCell + kvi.inNameWidth" :y2="kvi.top + kvi.oneCell"
-      stroke="black" />
+      stroke="black" :stroke-width="kvi.cellBorderSw" />
     <!-- col header -->
-    <text :x="kvi.colHeaderLabel.x" :y="kvi.colHeaderLabel.y" :font-size="kvi.fontLabelSize" :font-family="kvi.fontInFam"
-      text-anchor="middle" dominant-baseline="central">
+    <text :x="kvi.colHeaderLabel.x" :y="kvi.colHeaderLabel.y" :font-size="kvi.fontLabelSize"
+      :font-family="kvi.fontLabelFam" text-anchor="middle" dominant-baseline="central">
       {{ kvi.colHeaderLabel.v }}
     </text>
-    <text v-for="ch in kvi.colHeader" :key="ch.key" :x="ch.x + kvi.inNameWidth" :y="ch.y" :font-size="kvi.fontBodySize"
+    <text v-for="ch in kvi.colHeader" :key="ch.key" :x="ch.x + kvi.inNameWidth" :y="ch.y" :font-size="kvi.fontInSize"
       :font-family="kvi.fontInFam" text-anchor="middle" dominant-baseline="central">
       {{ ch.v }}
     </text>
     <!-- row header -->
-    <text :x="kvi.rowHeaderLabel.x" :y="kvi.rowHeaderLabel.y" :font-size="kvi.fontLabelSize" :font-family="kvi.fontInFam"
-      text-anchor="middle" dominant-baseline="central">
+    <text :x="kvi.rowHeaderLabel.x" :y="kvi.rowHeaderLabel.y" :font-size="kvi.fontLabelSize"
+      :font-family="kvi.fontLabelFam" text-anchor="middle" dominant-baseline="central">
       {{ kvi.rowHeaderLabel.v }}
     </text>
-    <text v-for="rh in kvi.rowHeader" :key="rh.key" :x="rh.x + kvi.inNameWidth / 2" :y="rh.y"
-      :font-size="kvi.fontBodySize" :font-family="kvi.fontInFam" text-anchor="middle" dominant-baseline="central">
+    <text v-for="rh in kvi.rowHeader" :key="rh.key" :x="rh.x + kvi.inNameWidth / 2" :y="rh.y" :font-size="kvi.fontInSize"
+      :font-family="kvi.fontInFam" text-anchor="middle" dominant-baseline="central">
       {{ rh.v }}
     </text>
     <!-- table body -->
