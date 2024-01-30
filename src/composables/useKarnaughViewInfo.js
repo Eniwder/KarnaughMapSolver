@@ -3,20 +3,20 @@ const range = (n) => [...Array(n).keys()];
 
 // offsetに依存しないカルノー図の図形情報を管理する
 // あとは共通で使うオマケメソッド
-export function useKarnaghViewInfo(tableData, drawOpt, optView) {
+export function useKarnaghViewInfo(tableData, drawOpt, viewOpt) {
   const { padding, fontInFam, fontLabelSize, oneCell, fontBodyFam, fontBodySize, strokeMap } = drawOpt;
   const ctx = document.createElement('canvas').getContext('2d');
 
   // 列の数
   const colIn = computed(() =>
     Math.min(2, parseInt(tableData.meta.inputNum / 2) +
-      (tableData.meta.inputNum === 3 && optView.A_BC_or_A_BC ? 1 : 0))
+      (tableData.meta.inputNum === 3 && viewOpt.A_BC_or_A_BC ? 1 : 0))
   );
   // 行の数
   const rowIn = computed(() =>
     Math.min(2,
       (tableData.meta.inputNum - parseInt(tableData.meta.inputNum / 2)) -
-      (tableData.meta.inputNum === 3 && optView.A_BC_or_A_BC ? 1 : 0)
+      (tableData.meta.inputNum === 3 && viewOpt.A_BC_or_A_BC ? 1 : 0)
     ));
 
   // 入力名の横幅

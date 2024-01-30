@@ -71,6 +71,7 @@ const props = defineProps({
   viewOpt: {
     AB_or_BA: Boolean,
     A_BC_or_A_BC: Boolean,
+    // ABCD_EF_or_AB_CDEF: Boolean,
   },
   drawOpt: {
     fontInFam: String,
@@ -138,7 +139,6 @@ const tableData = computedReactive(() => {
 
   return replaceTableData(Object.assign({}, props._tableData), indices);
 });
-
 const subTables = computed(() => {
   // 4入力以下のテーブルに分割する
   function splitBody2In4(body, axis) {
@@ -160,7 +160,8 @@ const subTables = computed(() => {
       body: tableData.body
     }];
   } else {
-    const headers = tableData.headers.slice(0, 4);
+    // const axis = props.viewOpt.ABCD_EF_or_AB_CDEF ? 1 : 4;
+    const headers = tableData.headers.slice(0, 4); // この値は使われないけど一応
     const bodies = splitBody2In4(tableData.body, 4);
     bodies.forEach((_, idx) => {
       groups[idx] = props._tableData.groups[idx] || {

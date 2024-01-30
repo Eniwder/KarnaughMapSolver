@@ -148,6 +148,13 @@ const viewOpt = reactive([
     value: false,
     disc: '3入力の時に入力の区切り位置を変更します。',
   },
+  // TODO 気が向いたら対応する。useKarnaugの方に色々手を加える必要がある
+  // {
+  //   key: 'ABCD_EF_or_AB_CDEF',
+  //   label: 'ABCD/EF ↔ AB/CDEF',
+  //   value: false,
+  //   disc: '5入力以上の時に入力の区切り位置を変更します。',
+  // },
 ]);
 const advancedOpt = ref(false);
 const DrawOptDefault = {
