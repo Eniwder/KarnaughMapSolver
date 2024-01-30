@@ -502,10 +502,10 @@ async function autoGrouping() {
     emit('msg', t('囲んでいます。複雑なので結構時間がかかるかも。'));
     isAutoGrouping.value = true;
   }
-  console.time('autoGrouping');
+  // console.time('autoGrouping');
   const taskArg = { vms: acc7, maxComb, kms, oneLists };
   const acc8 = window.Worker ? await webWorkerAsync(task, taskArg) : task(taskArg);
-  console.timeEnd('autoGrouping');
+  // console.timeEnd('autoGrouping');
   isAutoGrouping.value = false;
   // console.log(acc8);
 
