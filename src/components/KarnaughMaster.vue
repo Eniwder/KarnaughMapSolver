@@ -455,7 +455,7 @@ async function autoGrouping() {
     const { vms, maxComb, kms, oneLists } = arg;
     function combination(nums, k) {
       let ans = [];
-      if (nums.length < k) return [];
+      if (nums.length < k || k < 1) return [];
       if (k === 1) {
         for (let i = 0; i < nums.length; i++) {
           ans[i] = [nums[i]];
