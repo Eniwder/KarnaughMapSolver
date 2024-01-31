@@ -39,6 +39,7 @@
 import { reactive, computed, onMounted, watch, nextTick, ref, provide, readonly } from 'vue';
 import { useI18n } from "vue-i18n";
 import KarnaughChild from './KarnaughChild.vue';
+import { saveAs } from 'file-saver';
 import { useKarnaghViewInfo } from '../composables/useKarnaughViewInfo';
 const { t } = useI18n({ useScope: "global" });
 import { useComputedReactive } from '../composables/useComputedReactive';
@@ -152,6 +153,7 @@ const subTables = computed(() => {
     if ((body[0].length - tableData.meta.outputNum) < 6) return bodies;
     else return bodies.flatMap(_ => splitBody2In4(_, axis));
   }
+  groups.splice(0, groups.length);
   if (props._tableData.meta.inputNum <= 4) {
     groups[0] = props._tableData.groups[0];
     return [{
@@ -186,7 +188,7 @@ const subTables = computed(() => {
   }
 });
 // TODO ABCD/EF <-> AB/CDEF (ABCDE/F <-> A/BCDEF)
-
+// TODO 詳細設定をlocalstorageに保存して読み込む？　複数人で作業する場合を想定すると個人の環境に依存させたほうがよさそう
 const kvi = computedReactive(() => useKarnaghViewInfo(tableData, props.drawOpt, props.viewOpt));
 provide('karnaughViewInfo', readonly(kvi));
 const baseOffset = computed(() => props._tableData.meta.inputNum <= 4 ? 0 : props.drawOpt.oneCell);
@@ -215,7 +217,7 @@ Set.prototype.max = function () {
 
 const terms = computed(() => {
   const labels = groups.flatMap((k, idx) => {
-    const getIdx = (grp) => grp.map(_ => _.split('@').map(xy => xy.split(',').map(_ => parseInt(_) - 1)));
+    const getIdx = (grp) => grp.map(_ => _.split('@').map(xy => xy.split(',').map(_ => parseInt(_))));
     const dimLabelE = idx => tableData.headers[4] ? (idx % 2 === 0 ? '0' : '1') : '';
     const dimLabelF = idx => tableData.headers[5] ? (idx < 2 ? '0' : '1') : '';
 
@@ -531,7 +533,7 @@ async function autoGrouping() {
     const grp = Array.from(acc7[idx][key][subIdx])
       .map((_) =>
         _.split(',')
-          .map((_) => parseInt(_) + 1)
+          .map((_) => parseInt(_))
           .join(',')
       )
       .sort()
@@ -567,8 +569,7 @@ function save(ext) {
     canvas.width = svg.width.baseVal.value;
     canvas.height = svg.height.baseVal.value;
     const ctx = canvas.getContext('2d');
-
-    let image = new Image();
+    const image = new Image();
     image.onload = () => {
       ctx.drawImage(image, 0, 0, image.width, image.height);
       let link = document.createElement('a');
@@ -588,9 +589,29 @@ function save(ext) {
     a.download = `${tableData.outName}.svg`;
     a.click();
     URL.revokeObjectURL(svgUrl);
+  } else if (ext === 'tex') {
+    const blob = new Blob([JSON.stringify(save)], {
+      type: 'application/x-latex',
+    });
+    saveAs(blob, `${projectName.value}.json`);
   } else {
     console.warn(`非対応の拡張子：${ext}`);
   }
+}
+
+function createTexString() {
+
+
+  return `\\documentclass[a4paper]{article}
+\\usepackage{karnaugh-map}
+\\usepackage {askmaps}
+
+
+
+% 下にある*を抜くとカラーになります
+\\begin{karnaugh-map}*[4][4][4]
+
+\\end{document}`;
 }
 
 // groupがgroup_を参照しているのでgroupを直接変形したい時におかしくなるの回避
@@ -621,7 +642,7 @@ function regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
 
   // まずは戻す
   const grp = groups[0].grp;
-  regroup(grp, grp.map(_ => _.split('@').map(_ => _.split(',').map(_ => parseInt(_) - 1))
+  regroup(grp, grp.map(_ => _.split('@').map(_ => _.split(',').map(_ => parseInt(_)))
     .map(([x, y]) => {
       let [dx, dy] = [x, y];
       if (abbaOld) {
@@ -633,12 +654,12 @@ function regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
         dx = x < 2 ? 0 : 1;
         dy = x % 3 === 0 ? y : 3 - y;
       }
-      return `${dx + 1},${dy + 1}`;
+      return `${dx},${dy}`;
     })
     .join('@')
   ));
   // 次に変形
-  regroup(grp, grp.map(_ => _.split('@').map(_ => _.split(',').map(_ => parseInt(_) - 1))
+  regroup(grp, grp.map(_ => _.split('@').map(_ => _.split(',').map(_ => parseInt(_)))
     .map(([x, y]) => {
       let [dx, dy] = [parseInt(x), parseInt(y)];
       if (abbaNew || a_bcNew) {

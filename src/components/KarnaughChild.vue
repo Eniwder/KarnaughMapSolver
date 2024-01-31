@@ -112,7 +112,7 @@ const tableBody = computed(() => {
     )
     .flat();
 });
-const selects = computed(() => _selects.map((_) => _.split(',').map((_) => parseInt(_) - 1)));
+const selects = computed(() => _selects.map((_) => _.split(',').map((_) => parseInt(_))));
 const arcs = computed(() => circles.value.filter((_) => _.type === 'arc').sort((a, b) => b.sw - a.sw));
 const ellipses = computed(() => circles.value.filter((_) => _.type === 'ellipse').sort((a, b) => b.sw - a.sw));
 const rects = computed(() => circles.value.filter((_) => _.type === 'rect').sort((a, b) => b.sw - a.sw));
@@ -224,7 +224,7 @@ const isSelected = computed(() => {
 function drawGrp(grp) {
   return grp.map(_ => _.split('@')
     .sort()
-    .map((_) => _.split(',').map((_) => parseInt(_) - 1))
+    .map((_) => _.split(',').map((_) => parseInt(_)))
   );
 }
 
@@ -240,12 +240,12 @@ function svgBez(v) {
 
 function select(ev) {
   const selectCell = (x, y) => {
-    return [parseInt(x / kvi.oneCell), parseInt(y / kvi.oneCell)];
+    return [parseInt(x / kvi.oneCell) - 1, parseInt(y / kvi.oneCell) - 1];
   };
   const bcr = svgChild.value.getBoundingClientRect();
   const [ox, oy] = [bcr.x, bcr.y].map((_) => parseInt(_));
   const sc = selectCell(ev.clientX - ox - kvi.left - kvi.inNameWidth, ev.clientY - oy - kvi.top);
-  if (sc[0] < 1 || kvi.colIn * 2 < sc[0] || sc[1] < 1 || kvi.rowIn * 2 < sc[1]) return;
+  if (sc[0] < 0 || kvi.colIn * 2 < sc[0] || sc[1] < 0 || kvi.rowIn * 2 < sc[1]) return;
   const scs = sc.join(',');
   const hasIdx = _selects.indexOf(scs);
   if (hasIdx >= 0) {
@@ -408,17 +408,6 @@ function autoGrouping() {
   }
 
   const group = acc5[0];
-  // .map((_) =>
-  //   Array.from(_)
-  //     .map((_) =>
-  //       _.split(',')
-  //         .map((_) => parseInt(_) + 1)
-  //         .join(',')
-  //     )
-  //     .sort()
-  //     .join('@')
-  // );
-
   return { canGroup, group, oneList };
 }
 </script>
