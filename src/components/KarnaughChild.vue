@@ -42,10 +42,12 @@
     </text>
     <!-- table body -->
     <text v-for="tb in tableBody" :key="tb.key" :x="tb.x + kvi.inNameWidth" :y="tb.y" :font-size="kvi.fontBodySize"
-      :font-family="kvi.fontBodyFam" text-anchor="middle" dominant-baseline="central"
-      :fill="colors[parseInt((tb.x) / kvi.oneCell) - 1][parseInt((tb.y) / kvi.oneCell) - 1]">
+      :font-family="kvi.fontBodyFam" text-anchor="middle" dominant-baseline="central">
       {{ tb.v }}
     </text>
+    <rect v-for=" tb in tableBody" :key="tb.key + 'rect'" :x="tb.x + kvi.inNameWidth - kvi.oneCell / 2"
+      :y="tb.y - kvi.oneCell / 2" fill="#ff494933" stroke="none" :width="kvi.oneCell" :height="kvi.oneCell"
+      v-show="isSelected[parseInt((tb.x) / kvi.oneCell) - 1][parseInt((tb.y) / kvi.oneCell) - 1]" />
     <path v-for="p in arcs" :d="svgArc(p)" :key="p.key" fill="none" :stroke="p.sc" :stroke-width="p.sw" />
     <path v-for="p in bezs" :d="svgBez(p)" :key="p.key" fill="none" :stroke="p.sc" :stroke-width="p.sw" />
     <ellipse v-for="p in ellipses" :key="p.key" v-bind="p" fill="none" :stroke="p.sc" :stroke-width="p.sw" />
@@ -208,15 +210,13 @@ const circles = computed(() => {
   return ret;
 });
 
-const colors = computed(() => {
+const isSelected = computed(() => {
   const ret = range((tableData.inputNum - parseInt(tableData.inputNum / 2)) * 2).map(
-    (_) => range(parseInt(tableData.inputNum / 2) * 2).fill('black')
+    (_) => range(parseInt(tableData.inputNum / 2) * 2).fill(false)
   );
   selects.value.forEach((_) => {
     const [x, y] = _;
-    if (x >= 0 && y >= 0) {
-      ret[x][y] = 'crimson';
-    }
+    ret[x][y] = x >= 0 && y >= 0;
   });
   return ret;
 });
