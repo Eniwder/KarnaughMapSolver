@@ -11,7 +11,8 @@ Please refer to the guide displayed below the Karnaugh map.
 - Project settings (from "︙" on the top left of the screen)
   - Export and Import
 - Karnaugh map settings (from "︙" on the top right of the Karnaugh chart)
-  - Save Karnaugh map (png, svg)
+  - Save Karnaugh map (png, svg, tex)
+    - Type of tex is depends on [karnaugh-map](https://ctan.org/pkg/karnaugh-map).
   - Redesign of Karnaugh map
 
 
