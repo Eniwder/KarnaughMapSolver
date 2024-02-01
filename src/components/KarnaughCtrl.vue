@@ -137,6 +137,7 @@ defineExpose({ changeCell, updateMsg, reset, deletedTab });
 const optExport = [
   { title: 'PNG保存', icon: 'mdi-download', handlar: () => save('png') },
   { title: 'SVG保存', icon: 'mdi-download', handlar: () => save('svg') },
+  { title: 'Tex保存', icon: 'mdi-download', handlar: () => save('tex') },
 ];
 
 const msg = ref(t('まずは真理値表を編集。0,1以外はドントケア扱い。'));

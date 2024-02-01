@@ -350,8 +350,6 @@ function autoGrouping() {
 
   const toOneList = (_) =>
     Array.from(_).filter((_) => tableMap.value[label(_.split(','))] === '1');
-  const toOneOrDcList = (_) =>
-    Array.from(_).filter((_) => tableMap.value[label(_.split(','))] !== '0');
 
   const acc4 = acc3
     .map((_) => new Set(_.map((_) => _.join(','))))

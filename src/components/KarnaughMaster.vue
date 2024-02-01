@@ -590,26 +590,75 @@ function save(ext) {
     a.click();
     URL.revokeObjectURL(svgUrl);
   } else if (ext === 'tex') {
-    const blob = new Blob([JSON.stringify(save)], {
+    const str = createTexString();
+    const blob = new Blob([str], {
       type: 'application/x-latex',
     });
-    saveAs(blob, `${projectName.value}.json`);
+    saveAs(blob, `${tableData.outName}.tex`);
   } else {
     console.warn(`非対応の拡張子：${ext}`);
   }
 }
 
 function createTexString() {
+  const tableMaps = subTables.value.map(tb => tb.body.reduce((acc, v) => {
+    acc[v.slice(0, tb.inputNum).join('')] = v[tb.inputNum + tb.outIdx];
+    return acc;
+  }, {}));
+  const texIdxLabel = kvi.rowHeader.map((_, idx) => idx < 2 ? _.v : kvi.rowHeader[5 - idx].v)
+    .flatMap(c => kvi.colHeader.map((_, idx) => idx < 2 ? _.v : kvi.colHeader[5 - idx].v).map(r => r + c));
+  const texIdxBodies = tableMaps.map(tm => texIdxLabel.map((_, idx) => tm[_]));
 
-
+  const [idxMapRow, idxMapCol] = [[1, 0, 3, 2], [2, 3, 0, 1]];
+  const getTexIdx = ([x, y]) => {
+    const _x = x < 2 ? x : 5 - x;
+    const _y = y < 2 ? y : 5 - y;
+    return _x + _y * kvi.colIn * 2;
+  };
+  const implicants = groups.flatMap((group, idx) =>
+    Object.entries(group).flatMap(([key, gs]) =>
+      gs.map(g => {
+        const xys = g.split('@').map(xy => xy.split(',').map(_ => parseInt(_)));
+        const xs = new Set(xys.map(_ => _[0]));
+        const ys = new Set(xys.map(_ => _[1]));
+        const [xmax, xmin, ymax, ymin] = [xs.max(), xs.min(), ys.max(), ys.min()];
+        const dim = (key === 'grp') ? idx :
+          key === 'rowGrp' ? [idx, idxMapRow[idx]].toSorted().join(',') :
+            key === 'colGrp' ? [idx, idxMapCol[idx]].toSorted().join(',') :
+              key === 'allGrp' ? '0,1,2,3' : '0';
+        // input=4で四隅が選択されている場合
+        if (xs.size === 2 && xmax - xmin > 1 && ys.size === 2 && ymax - ymin > 1) {
+          return `\\implicantcorner{0}{0}{2}{2}{8}{8}{10}{10}[${dim}]`;
+        } else if (xs.size == 2 && xmax - xmin > 1) { // 横の端と端
+          // xminのymin ymaxと　xmaxのymin ymax
+          const xmins = xys.filter(xy => xy[0] === xmin).map(_ => getTexIdx(_)).sort((a, b) => a - b);
+          const xmaxs = xys.filter(xy => xy[0] === xmax).map(_ => getTexIdx(_)).sort((a, b) => a - b);
+          return `\\implicantedge{${xmins[0]}}{${xmins[xmins.length - 1]}}{${xmaxs[0]}}{${xmaxs[xmins.length - 1]}}[${dim}]`;
+        } else if (ys.size == 2 && ymax - ymin > 1) { // 縦の端と端
+          // yminのxmin xmaxと　ymaxのxmin xmax
+          const ymins = xys.filter(xy => xy[1] === ymin).map(_ => getTexIdx(_)).sort((a, b) => a - b);
+          const ymaxs = xys.filter(xy => xy[1] === ymax).map(_ => getTexIdx(_)).sort((a, b) => a - b);
+          return `\\implicantedge{${ymins[0]}}{${ymins[ymins.length - 1]}}{${ymaxs[0]}}{${ymaxs[ymins.length - 1]}}[${dim}]`;
+          // 全部
+        } else {
+          const _xys = xys.sort((a, b) => (a[0] - b[0]) + (a[1] - b[1]));
+          return `\\implicant{${getTexIdx(_xys[0])}}{${getTexIdx(_xys[_xys.length - 1])}}[${dim}]`;
+        }
+      })
+    )
+  );
+  const dimMap = [0, 1, 1, 1, 1, 2, 4];
+  const headerLabel = `[$${kvi.colHeaderLabel.v}$][$${kvi.rowHeaderLabel.v}$]`;
+  const dimLabel = tableData.meta.inputNum > 4 ? `[$${((kvi.dimColHeaderLabel.v + ' ') || '') + kvi.dimRowHeaderLabel.v || ''}$]` : '';
   return `\\documentclass[a4paper]{article}
 \\usepackage{karnaugh-map}
-\\usepackage {askmaps}
+\\begin{document}
 
-
-
-% 下にある*を抜くとカラーになります
-\\begin{karnaugh-map}*[4][4][4]
+% 下にある*を抜くとカラーになります (詳細: https://ctan.org/pkg/karnaugh-map)
+\\begin{karnaugh-map}*[${kvi.colIn * 2}][${kvi.rowIn * 2}][${dimMap[tableData.meta.inputNum]}]${headerLabel}${dimLabel}
+\\manualterms{${texIdxBodies.map((v, idx) => v.join(',')).join(',')}}
+${Array.from(new Set(implicants)).join('\n')}
+\\end{karnaugh-map}
 
 \\end{document}`;
 }
