@@ -631,13 +631,13 @@ function createTexString() {
           return `\\implicantcorner{0}{0}{2}{2}{8}{8}{10}{10}[${dim}]`;
         } else if (xs.size == 2 && xmax - xmin > 1) { // 横の端と端
           // xminのymin ymaxと　xmaxのymin ymax
-          const xmins = xys.filter(xy => xy[0] === xmin).map(_ => getTexIdx(_)).sort((a, b) => a - b);
-          const xmaxs = xys.filter(xy => xy[0] === xmax).map(_ => getTexIdx(_)).sort((a, b) => a - b);
+          const xmins = xys.filter(xy => xy[0] === xmin).sort((a, b) => (a[0] - b[0]) + (a[1] - b[1])).map(_ => getTexIdx(_));
+          const xmaxs = xys.filter(xy => xy[0] === xmax).sort((a, b) => (a[0] - b[0]) + (a[1] - b[1])).map(_ => getTexIdx(_));
           return `\\implicantedge{${xmins[0]}}{${xmins[xmins.length - 1]}}{${xmaxs[0]}}{${xmaxs[xmins.length - 1]}}[${dim}]`;
         } else if (ys.size == 2 && ymax - ymin > 1) { // 縦の端と端
           // yminのxmin xmaxと　ymaxのxmin xmax
-          const ymins = xys.filter(xy => xy[1] === ymin).map(_ => getTexIdx(_)).sort((a, b) => a - b);
-          const ymaxs = xys.filter(xy => xy[1] === ymax).map(_ => getTexIdx(_)).sort((a, b) => a - b);
+          const ymins = xys.filter(xy => xy[1] === ymin).sort((a, b) => (a[0] - b[0]) + (a[1] - b[1])).map(_ => getTexIdx(_));
+          const ymaxs = xys.filter(xy => xy[1] === ymax).sort((a, b) => (a[0] - b[0]) + (a[1] - b[1])).map(_ => getTexIdx(_));
           return `\\implicantedge{${ymins[0]}}{${ymins[ymins.length - 1]}}{${ymaxs[0]}}{${ymaxs[ymins.length - 1]}}[${dim}]`;
           // 全部
         } else {
