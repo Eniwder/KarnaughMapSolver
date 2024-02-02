@@ -15,6 +15,7 @@ export const langCodes = {
 
 const i18n = createI18n({
   legacy: false,
+  warnHtmlMessage: false,
   locale: DEFAULT_LANG,
   fallbackLocale: DEFAULT_LANG,
   messages,

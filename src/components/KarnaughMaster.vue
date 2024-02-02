@@ -187,7 +187,6 @@ const subTables = computed(() => {
     }));
   }
 });
-// TODO ABCD/EF <-> AB/CDEF (ABCDE/F <-> A/BCDEF)
 // TODO 詳細設定をlocalstorageに保存して読み込む？　複数人で作業する場合を想定すると個人の環境に依存させたほうがよさそう
 const kvi = computedReactive(() => useKarnaghViewInfo(tableData, props.drawOpt, props.viewOpt));
 provide('karnaughViewInfo', readonly(kvi));

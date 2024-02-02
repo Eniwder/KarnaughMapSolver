@@ -54,6 +54,8 @@
     "セルのボーダー幅": "セルのボーダー幅",
     "ヘッダーのフォント名": "ヘッダーのフォント名",
     "ヘッダーのフォントサイズ": "ヘッダーのフォントサイズ",
+    "設定を記憶する": "設定を記憶する",
+    "設定はブラウザに記憶されます。": "設定はブラウザに記憶されます。<br>記憶した設定を初期化したい場合は、「設定をデフォルトに戻す」を押してからこのボタンを押してください。",
     "設定をデフォルトに戻す": "設定をデフォルトに戻す",
     "": ""
   },
@@ -112,6 +114,8 @@
     "セルのボーダー幅": "Border of cell",
     "ヘッダーのフォント名": "Font family of header",
     "ヘッダーのフォントサイズ": "Font size of header",
+    "設定を記憶する": "Remember settings",
+    "設定はブラウザに記憶されます。": "Your settings is stored in your browser. <br>If you want to initialize the memorized settings, press 'Restore settings to default' and then press this button.",
     "設定をデフォルトに戻す": "Restore settings to default",
     "": ""
   }

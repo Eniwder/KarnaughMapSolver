@@ -102,7 +102,18 @@
             v-model.number="_drawOpt.strokeMap.allGrp.sw"></v-text-field></v-col>
         <v-col cols="3"><v-text-field type="string" :label="$t('グループの線の色') + 4"
             v-model="_drawOpt.strokeMap.allGrp.sc"></v-text-field></v-col>
-        <v-col cols="4"> <v-btn elevation="2" color="indigo-lighten-4" @click="resetAdancedSetting">{{
+        <v-col cols="3">
+          <v-tooltip bottom open-delay="200">
+            <template v-slot:activator="{ props }">
+              <span v-bind="props">
+                <v-btn elevation="2" color="indigo-lighten-4" @click="saveAdancedSetting" width="267">{{
+                  $t('設定を記憶する') }}</v-btn>
+              </span>
+            </template>
+            <span v-html="$t('設定はブラウザに記憶されます。')"></span>
+          </v-tooltip>
+        </v-col>
+        <v-col cols="3"> <v-btn elevation="2" color="indigo-lighten-4" width="267" @click="resetAdancedSetting">{{
           $t('設定をデフォルトに戻す') }}</v-btn></v-col>
 
       </v-row>
@@ -198,7 +209,14 @@ const DrawOptDefault = {
     }
   }
 };
-const _drawOpt = reactive(JSON.parse(JSON.stringify(DrawOptDefault)));
+
+let _drawOptTmp = JSON.stringify(DrawOptDefault);
+try {
+  _drawOptTmp = JSON.parse(localStorage.getItem('drawOpt') || _drawOptTmp);
+} catch (e) {
+  console.error(e);
+}
+const _drawOpt = reactive(_drawOptTmp);
 
 const in2MinMax = (v, min, max) => v < min ? min : v > max ? max : v;
 const validCssOrElse = (str, v, key) => (str && str !== '') && CSS.supports(key, str) ? str : v;
@@ -252,6 +270,10 @@ const viewOptProps = computed(() => {
     return acc;
   }, {});
 });
+
+function saveAdancedSetting() {
+  localStorage.setItem('drawOpt', JSON.stringify(_drawOpt));
+}
 
 function resetAdancedSetting() {
   Object.assign(_drawOpt, JSON.parse(JSON.stringify(DrawOptDefault)));
