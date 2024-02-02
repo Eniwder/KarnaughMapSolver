@@ -187,7 +187,6 @@ const subTables = computed(() => {
     }));
   }
 });
-// TODO 詳細設定をlocalstorageに保存して読み込む？　複数人で作業する場合を想定すると個人の環境に依存させたほうがよさそう
 const kvi = computedReactive(() => useKarnaghViewInfo(tableData, props.drawOpt, props.viewOpt));
 provide('karnaughViewInfo', readonly(kvi));
 const baseOffset = computed(() => props._tableData.meta.inputNum <= 4 ? 0 : props.drawOpt.oneCell);
