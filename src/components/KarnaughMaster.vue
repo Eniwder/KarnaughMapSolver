@@ -36,15 +36,15 @@
 </template>
 
 <script setup>
-import { reactive, computed, onMounted, watch, nextTick, ref, provide, readonly } from 'vue';
-import { useI18n } from "vue-i18n";
-import KarnaughChild from './KarnaughChild.vue';
 import { saveAs } from 'file-saver';
-import { useKarnaghViewInfo } from '../composables/useKarnaughViewInfo';
-const { t } = useI18n({ useScope: "global" });
+import { computed, nextTick, provide, reactive, readonly, ref, watch } from 'vue';
+import { useI18n } from "vue-i18n";
 import { useComputedReactive } from '../composables/useComputedReactive';
-const { computedReactive } = useComputedReactive();
+import { useKarnaghViewInfo } from '../composables/useKarnaughViewInfo';
 import { useWebWorkerAsync } from '../composables/useWebWorkerAsync';
+import KarnaughChild from './KarnaughChild.vue';
+const { t } = useI18n({ useScope: "global" });
+const { computedReactive } = useComputedReactive();
 const { webWorkerAsync } = useWebWorkerAsync();
 
 const emit = defineEmits(['msg', 'grouped']);
@@ -305,7 +305,7 @@ function copy4word() {
 }
 
 function grouping() {
-  // selects := [[x,y], ['0000', '0001', ...]]
+  // selects := [[x,y], ['0000', '0001', ...],...]
   const selects = karnaughChildRef.value.map(_ => _.getSelects());
   // 各カルノー図の選択が基本的な条件を満たしているかチェック
   // 5変数以上のチェックは別で行う
@@ -332,7 +332,7 @@ function grouping() {
   // ここで同じペアが含まれているか比較するために文字列化
   const selectsStr = selects.map(_ => _[3].sort().join('@'));
 
-  // 指定されたグループで囲むor囲みを解除する
+  // 指定されたグループで囲むor囲みを解除するヘルパー
   function helper(key) {
     subTables.value.forEach((v, idx) => {
       if (selects[idx][0].length === 0) return;
@@ -383,6 +383,7 @@ function deselection() {
   karnaughChildRef.value.forEach(_ => _.deselection());
 }
 
+// 各子カルノー図が求めた4変数未満単位の最小項を使って、完全な最小項を組み合わせを総当りで求める
 async function autoGrouping() {
   function eqSet(as, bs) {
     if (as.size !== bs.size) return false;
@@ -410,7 +411,7 @@ async function autoGrouping() {
   if (oneLists.every(_ => _.length === 0)) return;
   const acc6 = [];
   // groupにある値を改めてall,col,rowでくくる
-  // その時、groupは他要素のdon't careとペアを組める
+  // その時、groupは他カルノー図の1かdon't careとペアを組める
   // 既存groupと再くくりの結果の全ての組み合わせで、onSetを網羅する最小項数を探す
   const allGrp = [];
   if (tableData.meta.inputNum === 6) {
@@ -420,7 +421,7 @@ async function autoGrouping() {
     }, new Set());
     Array.from(noDup).map(_ => new Set(_.split('@'))).forEach(_ => allGrp.push(_));
   }
-  // console.log(allGrp);
+
   const [rowIdxMap, colIdxMap] = [[1, 0, 3, 2], [2, 3, 0, 1]];
   range(4).forEach((_, idx) => acc6[idx] = { grp: [], rowGrp: [], colGrp: [], allGrp: allGrp });
   _groups.forEach((group, idx) => {
@@ -432,10 +433,9 @@ async function autoGrouping() {
     acc6[idx].colGrp.push(...colGrp);
     acc6[idx].allGrp = allGrp;
   });
-  // console.log(acc6);
 
-  // 組み合わせを計算しやすくするためにデータをラベルに紐付ける
-  // 組み合わせを減らすためにデータは枝刈りする
+  // 組み合わせを計算しやすくするために全組み合わせを1次元の配列にする。例：acc7[X].all[Y] -> [X,all,Y]
+  // 組み合わせ数を減らすためにデータをSetに変換して重複排除の枝刈りする
   const _kms = [];
   const acc7 = range(acc6.length).map((_, idx) => ({ grp: acc6[idx].grp, rowGrp: [], colGrp: [], allGrp: [] }));
   acc7[0].allGrp = allGrp;
@@ -448,12 +448,11 @@ async function autoGrouping() {
   Array.from(new Set(Array.from(new Set([...acc6[1].colGrp, ...acc6[3].colGrp].map(_ => Array.from(_).join('@')))).map(_ => _.split('@'))))
     .forEach(rg => acc7[1].colGrp.push(rg));
 
-  // console.log(acc7);
   const kms = acc7.flatMap((grps, idx) => Object.keys(grps).flatMap(gkey => grps[gkey].map((v, subIdx) => [idx, gkey, subIdx])));
 
-  const weights = { grp: 0, rowGrp: 1, colGrp: 1, allGrp: 3 };
   const maxComb = acc7.reduce((acc, v) => acc + Object.values(v).reduce((acc, v) => acc + v.length, 0), 0);
 
+  // webWorkerで処理できるように調整
   const task = (arg) => {
     const { vms, maxComb, kms, oneLists } = arg;
     function combination(nums, k) {
@@ -511,7 +510,6 @@ async function autoGrouping() {
   const acc8 = window.Worker ? await webWorkerAsync(task, taskArg) : task(taskArg);
   // console.timeEnd('autoGrouping');
   isAutoGrouping.value = false;
-  // console.log(acc8);
 
   // 項数が同じ場合は、allGrp, colGrp=rowGrpの順で数が多くなるようにする
   const getScore = keys => {
@@ -637,8 +635,7 @@ function createTexString() {
           const ymins = xys.filter(xy => xy[1] === ymin).sort((a, b) => (a[0] - b[0]) + (a[1] - b[1])).map(_ => getTexIdx(_));
           const ymaxs = xys.filter(xy => xy[1] === ymax).sort((a, b) => (a[0] - b[0]) + (a[1] - b[1])).map(_ => getTexIdx(_));
           return `\\implicantedge{${ymins[0]}}{${ymins[ymins.length - 1]}}{${ymaxs[0]}}{${ymaxs[ymins.length - 1]}}[${dim}]`;
-          // 全部
-        } else {
+        } else { // 全部
           const _xys = xys.sort((a, b) => (a[0] - b[0]) + (a[1] - b[1]));
           return `\\implicant{${getTexIdx(_xys[0])}}{${getTexIdx(_xys[_xys.length - 1])}}[${dim}]`;
         }

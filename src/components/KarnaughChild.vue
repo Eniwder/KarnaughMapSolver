@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { reactive, computed, onMounted, watch, nextTick, ref, inject, isProxy, toRaw } from 'vue';
+import { computed, inject, reactive, ref } from 'vue';
 import { useComputedReactive } from '../composables/useComputedReactive';
 const { computedReactive } = useComputedReactive();
 const kvi = inject('karnaughViewInfo');
@@ -294,13 +294,13 @@ function combination(nums, k) {
   return ans;
 }
 
+// 総当りで最小項を求める
 function autoGrouping() {
   const indices = range(kvi.colIn * 2)
     .map((c) => range(kvi.rowIn * 2).map((r) => [c, r]))
     .flat();
   const label = xy => kvi.colHeader[xy[0]].v + kvi.rowHeader[xy[1]].v;
   const allLabels = indices.map((_) => label(_));
-  // 総当りで求める
   const maxCombN = kvi.colIn * 2 * kvi.rowIn * 2;
   const getAllCombLabels = (n) => {
     if (n === 1) return combination(allLabels, n);

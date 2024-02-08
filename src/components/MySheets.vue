@@ -4,10 +4,8 @@
 
 <script setup>
 import { HotTable } from '@handsontable/vue3';
-import { reactive, computed } from 'vue';
-import { ref, watch, nextTick } from 'vue';
 import { registerAllModules } from 'handsontable/registry';
-import { useI18n } from "vue-i18n";
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 registerAllModules();
 defineExpose({ translateHeader });
 const emit = defineEmits(["changeCell"]);
