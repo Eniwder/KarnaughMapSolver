@@ -102,20 +102,18 @@
             v-model.number="_drawOpt.strokeMap.allGrp.sw"></v-text-field></v-col>
         <v-col cols="3"><v-text-field type="string" :label="$t('グループの線の色') + 4"
             v-model="_drawOpt.strokeMap.allGrp.sc"></v-text-field></v-col>
-        <v-col cols="3">
+        <v-col cols="3" class="ad-btn">
           <v-tooltip bottom open-delay="200">
             <template v-slot:activator="{ props }">
               <span v-bind="props">
-                <v-btn elevation="2" color="indigo-lighten-4" @click="saveAdancedSetting" width="267">{{
-                  $t('設定を記憶する') }}</v-btn>
+                <v-btn elevation="2" color="indigo-lighten-4" @click="saveAdancedSetting"> {{ $t('設定を記憶する') }}</v-btn>
               </span>
             </template>
             <span v-html="$t('設定はブラウザに記憶されます。')"></span>
           </v-tooltip>
         </v-col>
-        <v-col cols="3"> <v-btn elevation="2" color="indigo-lighten-4" width="267" @click="resetAdancedSetting">{{
-          $t('設定をデフォルトに戻す') }}</v-btn></v-col>
-
+        <v-col cols="3" class="ad-btn"> <v-btn elevation="2" color="indigo-lighten-4" @click="resetAdancedSetting">
+            {{ $t('設定をデフォルトに戻す') }}</v-btn></v-col>
       </v-row>
     </v-card>
   </div>
@@ -394,12 +392,32 @@ watch(() => props.tables.length, () => {
 }
 
 .advanced-opt {
-  padding: 16px
+  padding: 16px;
 }
 </style>
 
 <style>
 .msg .v-field--disabled {
   opacity: 1 !important;
+}
+
+.advanced-opt .v-field__field {
+  font-size: 11px
+}
+
+.advanced-opt .ad-btn {
+  min-width: 200px;
+}
+
+.advanced-opt .ad-btn button {
+  min-width: 200px;
+}
+
+.advanced-opt .v-field__field input {
+  font-size: 14px
+}
+
+.advanced-opt label {
+  margin-left: 8px !important;
 }
 </style>

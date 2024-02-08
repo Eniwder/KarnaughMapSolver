@@ -77,12 +77,12 @@
           </v-row>
 
           <v-row>
-            <v-col class="sheets" cols="12" sm="6"
+            <v-col class="sheets" cols="6"
               :style="{ height: tab.sheetHeight, flexBasis: (tab.sheets.meta.inputNum + tab.sheets.meta.outputNum) * 60 + 'px' }">
               <MySheets :tableData="tab.sheets" @changeCell="changeCell(tab.id, $event, idx)" ref="sheetsRef">
               </MySheets>
             </v-col>
-            <v-col cols="12" sm="6" class="karnaughTable">
+            <v-col cols="6" class="karnaughTable">
               <KarnaughCtrl :tables="karnaughTable" ref="karnaughTableRef" @grouped="grouped($event)"></KarnaughCtrl>
             </v-col>
           </v-row>
@@ -481,7 +481,6 @@ button[role='tab'] div .v-btn--icon {
     transform: scale(0.8);
     margin-left: -30px;
     margin-top: -80px;
-
   }
 }
 
