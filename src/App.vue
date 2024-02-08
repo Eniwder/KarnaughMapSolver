@@ -93,13 +93,13 @@
 </template>
 
 <script setup>
-import MySheets from './components/MySheets.vue';
-import KarnaughCtrl from './components/KarnaughCtrl.vue';
-import CloseButton from './components/CloseButtonWithDialog.vue';
 import { saveAs } from 'file-saver';
-import { reactive, ref, watch, onMounted, computed, nextTick } from 'vue';
-import { useComputedReactive } from './composables/useComputedReactive';
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { useI18n } from "vue-i18n";
+import CloseButton from './components/CloseButtonWithDialog.vue';
+import KarnaughCtrl from './components/KarnaughCtrl.vue';
+import MySheets from './components/MySheets.vue';
+import { useComputedReactive } from './composables/useComputedReactive';
 const { t, locale } = useI18n({ useScope: "global" });
 const { computedReactive } = useComputedReactive();
 
