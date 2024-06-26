@@ -329,7 +329,6 @@ function changeInOut(id, inout, event, idx) {
 }
 
 function changeCell(id, e, idx) {
-  console.log(id, e, idx);
   if (!e) return;
   const tabId = tabs.findIndex((_) => _.id === id);
   const [y, x, old, v] = e;
@@ -367,6 +366,8 @@ function edit(ev) {
   } else {
     activeTab.sheets.body[row][col] = '0';
   }
+  tabs[tab.value].modified = true;
+  karnaughTableRef.value[tab.value].reset();
 }
 
 watch(opts, (newVal, oldVal) => {
