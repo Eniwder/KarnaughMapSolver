@@ -74,6 +74,9 @@
                 v-model="tab.sheets.meta.outputNum" label="Outputs"
                 @update:modelValue="changeInOut(tab.id, 'output', $event, idx)"></v-select>
             </v-col>
+            <v-col class="d-none d-sm-flex" cols="3">
+              <DirectEditSwitch v-model="directEdit"></DirectEditSwitch>
+            </v-col>
           </v-row>
 
           <v-row>
@@ -82,8 +85,13 @@
               <MySheets :tableData="tab.sheets" @changeCell="changeCell(tab.id, $event, idx)" ref="sheetsRef">
               </MySheets>
             </v-col>
+            <v-col class="d-flex d-sm-none" cols="12">
+              <DirectEditSwitch v-model="directEdit"></DirectEditSwitch>
+            </v-col>
             <v-col cols="6" class="karnaughTable">
-              <KarnaughCtrl :tables="karnaughTable" ref="karnaughTableRef" @grouped="grouped($event)"></KarnaughCtrl>
+              <KarnaughCtrl :tables="karnaughTable" :config="config" ref="karnaughTableRef" @grouped="grouped"
+                @edit="edit">
+              </KarnaughCtrl>
             </v-col>
           </v-row>
         </v-container>
@@ -99,6 +107,7 @@ import { useI18n } from "vue-i18n";
 import CloseButton from './components/CloseButtonWithDialog.vue';
 import KarnaughCtrl from './components/KarnaughCtrl.vue';
 import MySheets from './components/MySheets.vue';
+import DirectEditSwitch from './components/DirectEditSwitch.vue';
 import { useComputedReactive } from './composables/useComputedReactive';
 const { t, locale } = useI18n({ useScope: "global" });
 const { computedReactive } = useComputedReactive();
@@ -125,6 +134,10 @@ const tabs = reactive([]);
 addTab();
 const karnaughTableRef = ref(null);
 const sheetsRef = ref(null);
+const directEdit = ref(false);
+const config = reactive({
+  directEdit
+});
 
 const opts = reactive({
   lang: window.navigator.language.startsWith('ja') ? 'ja' : 'en'
@@ -241,7 +254,7 @@ function createTruthTable(inputNum, outputNum) {
       n
         .toString(2)
         .padStart(inputNum, 0)
-        .padEnd(inputNum + outputNum, 1)
+        .padEnd(inputNum + outputNum, 0)
         .split('')
     ),
   ];
@@ -316,6 +329,7 @@ function changeInOut(id, inout, event, idx) {
 }
 
 function changeCell(id, e, idx) {
+  console.log(id, e, idx);
   if (!e) return;
   const tabId = tabs.findIndex((_) => _.id === id);
   const [y, x, old, v] = e;
@@ -336,6 +350,22 @@ function confirmSave(event) {
   if (tabs.some((_) => _.modified)) {
     event.returnValue = '編集を保存せずにページを離れようとしています。このまま移動しますか？';
     return '編集を保存せずにページを離れようとしています。このまま移動しますか？';
+  }
+}
+
+function edit(ev) {
+  const { label, idx } = ev;
+  const row = activeTab.sheets.body.findIndex(row =>
+    row.slice(0, activeTab.sheets.meta.inputNum).join('') === label
+  );
+  const col = activeTab.sheets.meta.inputNum + idx;
+  const bv = activeTab.sheets.body[row][col];
+  if (bv === '0') {
+    activeTab.sheets.body[row][col] = '1';
+  } else if (bv === '1') {
+    activeTab.sheets.body[row][col] = '*';
+  } else {
+    activeTab.sheets.body[row][col] = '0';
   }
 }
 

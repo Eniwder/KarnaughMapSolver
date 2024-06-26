@@ -39,8 +39,9 @@
         <v-window v-model="selectedTab">
           <v-window-item v-for="table in props.tables" :key="table.key" ref="tabItem">
             <v-card>
-              <KarnaughMaster :_tableData="table" :viewOpt="viewOptProps" :drawOpt="drawOpt" @msg="updateMsg($event)"
-                @grouped="grouped($event)" ref="karnaughs">
+              <KarnaughMaster :_tableData="table" :config="config" :viewOpt="viewOptProps" :drawOpt="drawOpt"
+                @msg="updateMsg($event)" @grouped="grouped($event)" ref="karnaughs"
+                @edit="emit('edit', { label: $event, idx: table.outIdx })">
               </KarnaughMaster>
             </v-card>
           </v-window-item>
@@ -54,14 +55,14 @@
         <v-btn elevation="2" color="indigo-lighten-4" @click="grouping">{{ $t('囲む解除') }}
         </v-btn>
         <v-btn elevation="2" color="indigo-lighten-4" @click="deselection">{{
-          $t('選択解除')
-        }}</v-btn>
+    $t('選択解除')
+  }}</v-btn>
         <v-btn elevation="2" color="indigo-lighten-4" @click="reset(null)">{{
-          $t('リセット')
-        }}</v-btn>
+    $t('リセット')
+  }}</v-btn>
         <v-btn elevation="2" color="indigo-lighten-4" @click="autoGrouping">{{
-          $t('自動で囲む')
-        }}</v-btn>
+    $t('自動で囲む')
+  }}</v-btn>
       </v-row>
       <v-row v-show="advancedOpt" @keydown="$event.stopPropagation()" class="advanced-opt">
         <v-col cols="3"> <v-text-field type="number" step="any" min="18" max="100" :label="$t('セルのサイズ')"
@@ -83,7 +84,8 @@
         <v-col cols="3"> <v-text-field type="number" step="any" min="4" max="64" :label="$t('ヘッダーのフォントサイズ')"
             v-model.number="_drawOpt.fontInSize"></v-text-field> </v-col>
         <v-col cols="3"> <v-text-field type="string" :label="$t('テーブルのフォント名')"
-            v-model="_drawOpt.fontBodyFam"></v-text-field> </v-col>
+            v-model="_drawOpt.fontBodyFam"></v-text-field>
+        </v-col>
         <v-col cols="3"> <v-text-field type="number" step="any" min="4" max="64" :label="$t('テーブルのフォントサイズ')"
             v-model.number="_drawOpt.fontBodySize"></v-text-field> </v-col>
         <v-col cols="3"><v-text-field type="number" step="any" min="1" max="10" :label="$t('グループの線の太さ')"
@@ -140,8 +142,11 @@ const props = defineProps({
     }]],
     outIdx: Number
   },
+  config: {
+    directEdit: Boolean
+  }
 });
-const emit = defineEmits(["grouped"]);
+const emit = defineEmits(['grouped', 'edit']);
 defineExpose({ changeCell, updateMsg, reset, deletedTab });
 const optExport = [
   { title: 'PNG保存', icon: 'mdi-download', handlar: () => save('png') },

@@ -17,8 +17,8 @@
       :y1="kvi.top" :x2="col * kvi.oneCell + kvi.left + kvi.inNameWidth" :y2="kvi.bottom" stroke="black"
       :stroke-width="kvi.cellBorderSw" />
     <!-- grid row -->
-    <line v-for="row in 2 * kvi.rowIn" :key="'row' + row" :x1="kvi.left" :y1="row * kvi.oneCell + kvi.top" :x2="kvi.right"
-      :y2="row * kvi.oneCell + kvi.top" stroke="black" :stroke-width="kvi.cellBorderSw" />
+    <line v-for="row in 2 * kvi.rowIn" :key="'row' + row" :x1="kvi.left" :y1="row * kvi.oneCell + kvi.top"
+      :x2="kvi.right" :y2="row * kvi.oneCell + kvi.top" stroke="black" :stroke-width="kvi.cellBorderSw" />
     <!-- separate input -->
     <line :x1="kvi.left" :y1="kvi.top" :x2="kvi.left + kvi.oneCell + kvi.inNameWidth" :y2="kvi.top + kvi.oneCell"
       stroke="black" :stroke-width="kvi.cellBorderSw" />
@@ -36,8 +36,8 @@
       :font-family="kvi.fontLabelFam" text-anchor="middle" dominant-baseline="central">
       {{ kvi.rowHeaderLabel.v }}
     </text>
-    <text v-for="rh in kvi.rowHeader" :key="rh.key" :x="rh.x + kvi.inNameWidth / 2" :y="rh.y" :font-size="kvi.fontInSize"
-      :font-family="kvi.fontInFam" text-anchor="middle" dominant-baseline="central">
+    <text v-for="rh in kvi.rowHeader" :key="rh.key" :x="rh.x + kvi.inNameWidth / 2" :y="rh.y"
+      :font-size="kvi.fontInSize" :font-family="kvi.fontInFam" text-anchor="middle" dominant-baseline="central">
       {{ rh.v }}
     </text>
     <!-- table body -->
@@ -60,7 +60,7 @@ import { computed, inject, reactive, ref } from 'vue';
 import { useComputedReactive } from '../composables/useComputedReactive';
 const { computedReactive } = useComputedReactive();
 const kvi = inject('karnaughViewInfo');
-const emit = defineEmits(['msg', 'grouped', 'click',]);
+const emit = defineEmits(['edit']);
 defineExpose({ deselection, grouping, getSelects, reset, autoGrouping });
 
 const range = (n) => [...Array(n).keys()];
@@ -85,6 +85,9 @@ const props = defineProps({
   },
   idx: Number,
   subGroups: [],
+  config: {
+    DirectEdit: Boolean
+  }
 });
 const _selects = reactive([]);
 const svgChild = ref(null);
@@ -247,6 +250,9 @@ function select(ev) {
   const sc = selectCell(ev.clientX - ox - kvi.left - kvi.inNameWidth, ev.clientY - oy - kvi.top);
   if (sc[0] < 0 || kvi.colIn * 2 < sc[0] || sc[1] < 0 || kvi.rowIn * 2 < sc[1]) return;
   const scs = sc.join(',');
+  if (props.config.directEdit) {
+    return emit('edit', { xy: sc, idx: props.idx });
+  }
   const hasIdx = _selects.indexOf(scs);
   if (hasIdx >= 0) {
     _selects.splice(hasIdx, 1);
@@ -415,4 +421,3 @@ svg {
   user-select: none;
 }
 </style>
-        

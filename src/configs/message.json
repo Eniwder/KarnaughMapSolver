@@ -57,6 +57,8 @@
     "設定を記憶する": "設定を記憶する",
     "設定はブラウザに記憶されます。": "設定はブラウザに記憶されます。<br>記憶した設定を初期化したい場合は、「設定をデフォルトに戻す」を押してからこのボタンを押してください。",
     "設定をデフォルトに戻す": "設定をデフォルトに戻す",
+    "直接編集": "直接編集",
+    "カルノー図のセルを選択して直接編集ができます。": "カルノー図のセルを選択して直接編集ができます。",
     "": ""
   },
   "en": {
@@ -117,6 +119,8 @@
     "設定を記憶する": "Remember settings",
     "設定はブラウザに記憶されます。": "Your settings is stored in your browser. <br>If you want to initialize the memorized settings, press 'Restore settings to default' and then press this button.",
     "設定をデフォルトに戻す": "Restore settings to default",
+    "直接編集": "Direct Edit",
+    "カルノー図のセルを選択して直接編集ができます。": "You can select cells in the Karnaugh map and edit them directly.",
     "": ""
   }
 }

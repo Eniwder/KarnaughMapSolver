@@ -7,7 +7,7 @@
           {{ kvi.dimColHeaderLabel.v }} </text>
         <text v-for="v in kvi.dimColHeader" :x="v.x" :y="v.y" text-anchor="middle" dominant-baseline="central"
           fill="black" :font-size="kvi.fontInSize">{{
-            v.v }}</text>
+      v.v }}</text>
       </template>
       <template v-if="tableData.meta.inputNum > 5">
         <line :x1="kvi.padding + 8" :y1="kvi.padding + 8" :x2="offsets[0].x" :y2="offsets[0].y" stroke="black"
@@ -19,8 +19,8 @@
         <text v-for="v in kvi.dimRowHeader" :x="v.x" :y="v.y" text-anchor="middle" dominant-baseline="central"
           fill="black" :font-size="kvi.fontInSize">{{ v.v }}</text>
       </template>
-      <KarnaughChild v-for="(v, idx) in subTables" :tableData="v" :offset="offsets[idx]" :idx="idx" :key="idx"
-        ref="karnaughChildRef">
+      <KarnaughChild v-for="(v, idx) in subTables" :tableData="v" :offset="offsets[idx]" :config="config" :idx="idx"
+        :key="idx" ref="karnaughChildRef" @edit="edit">
       </KarnaughChild>
     </svg>
     <v-row class="fomulas" :style="{ maxWidth: Math.max(600, svgWidth) + 'px' }">
@@ -47,7 +47,7 @@ const { t } = useI18n({ useScope: "global" });
 const { computedReactive } = useComputedReactive();
 const { webWorkerAsync } = useWebWorkerAsync();
 
-const emit = defineEmits(['msg', 'grouped']);
+const emit = defineEmits(['msg', 'grouped', 'edit']);
 defineExpose({ deselection, grouping, autoGrouping, reset, save });
 
 const range = (n) => [...Array(n).keys()];
@@ -103,6 +103,9 @@ const props = defineProps({
         sc: String
       }
     }
+  },
+  config: {
+    directEdit: Boolean
   }
 });
 
@@ -305,7 +308,7 @@ function copy4word() {
 }
 
 function grouping() {
-  // selects := [[x,y], ['0000', '0001', ...],...]
+  // selects := [[[x,y]], ['0000', '0001', ...],...]
   const selects = karnaughChildRef.value.map(_ => _.getSelects());
   // 各カルノー図の選択が基本的な条件を満たしているかチェック
   // 5変数以上のチェックは別で行う
@@ -720,6 +723,21 @@ function regroup4changeView(abbaNew, abbaOld, a_bcNew, a_bcOld) {
     })
     .join('@')
   ));
+}
+
+function edit(ev) {
+  const { xy, idx } = ev;
+  const dimLabelE = idx => tableData.headers[4] ? (idx % 2 === 0 ? '0' : '1') : '';
+  const dimLabelF = idx => tableData.headers[5] ? (idx < 2 ? '0' : '1') : '';
+
+  let label = '';
+  if (props.viewOpt.AB_or_BA) {
+    label += kvi.rowHeader[xy[1]].v + kvi.colHeader[xy[0]].v;
+  } else {
+    label += kvi.colHeader[xy[0]].v + kvi.rowHeader[xy[1]].v;
+  }
+  label += dimLabelE(idx) + dimLabelF(idx);
+  emit('edit', label);
 }
 
 watch(() => props.viewOpt.AB_or_BA, (newV, oldV) => {
