@@ -368,7 +368,7 @@ function edit(ev) {
     activeTab.sheets.body[row][col] = '0';
   }
   tabs[tab.value].modified = true;
-  karnaughTableRef.value[tab.value].reset();
+  karnaughTableRef.value[tab.value].changeCell(idx);
 }
 
 watch(opts, (newVal, oldVal) => {
