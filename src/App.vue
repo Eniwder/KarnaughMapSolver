@@ -398,6 +398,10 @@ onMounted(() => {
   margin-top: 16px !important;
 }
 
+.v-toolbar__content {
+  height: 52px !important;
+}
+
 .v-toolbar__content .v-input {
   font-size: inherit;
   max-height: 64px !important;
