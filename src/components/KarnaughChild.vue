@@ -243,11 +243,13 @@ function svgBez(v) {
 
 function select(ev) {
   const selectCell = (x, y) => {
-    return [parseInt(x / kvi.oneCell) - 1, parseInt(y / kvi.oneCell) - 1];
+    const ajOneCell = (document.body.clientWidth < 450 ? 0.8 : 1) * kvi.oneCell;
+    return [parseInt(x / ajOneCell) - 1, parseInt(y / ajOneCell) - 1];
   };
   const bcr = svgChild.value.getBoundingClientRect();
   const [ox, oy] = [bcr.x, bcr.y].map((_) => parseInt(_));
   const sc = selectCell(ev.clientX - ox - kvi.left - kvi.inNameWidth, ev.clientY - oy - kvi.top);
+
   if (sc[0] < 0 || kvi.colIn * 2 < sc[0] || sc[1] < 0 || kvi.rowIn * 2 < sc[1]) return;
   const scs = sc.join(',');
   if (props.config.directEdit) {
