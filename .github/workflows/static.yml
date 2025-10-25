@@ -47,10 +47,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
-      - run: npm ci --prefer-offline || npm install
-      - run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
