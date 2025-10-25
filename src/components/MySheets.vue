@@ -149,6 +149,13 @@ watch(() => props.tableData, (val) => {
 .handsontable tr:nth-of-type(even) td {
   background-color: rgb(243, 243, 255) !important;
 }
+
+/* 変数を増やした場合にうまく幅を調節してくれなかったので強引に修正
+witdh的にはカルノー図に重なる場合があるが悪影響は無さそう。 */
+.handsontable.htColumnHeaders {
+  width: 150% !important;
+}
 </style>
 
+<!-- レガシーじゃないスタイルを使うと見た目がおかしくなるので、とりあえずこれを継続 -->
 <style src="../../node_modules/handsontable/dist/handsontable.full.css"></style>
