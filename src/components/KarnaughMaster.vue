@@ -169,7 +169,6 @@ const subTables = computed(() => {
     }, []));
     // body[0]が存在しない場合は空配列返す
     if (!bodies[0] || !Array.isArray(bodies[0])) return [[]];
-    // TODO 何やってるか忘れたけど5入力以上、6出力以上の場合はバグるかも？
     if ((body[0].length - (tableData.meta?.outputNum ?? 0)) < 6) return bodies;
     else return bodies.flatMap(_ => splitBody2In4(_, axis));
   }
@@ -193,7 +192,7 @@ const subTables = computed(() => {
 
     if (props._tableData.meta.inputNum === 6) {
       // 6入力 (4つの図) の場合: [E0F0, E0F1, E1F0, E1F1] -> [E0F0, E1F0, E0F1, E1F1] に並べ替え
-      // bodiesの順序は E0F0, E0F1, E1F0, E1F1 と仮定
+      // bodiesの順序は E0F0, E0F1, E1F0, E1F1
       reorderedBodies = [bodies[0], bodies[2], bodies[1], bodies[3]];
       indexMapping = [0, 2, 1, 3]; // NewIdx 0, 1, 2, 3 に対応する OldIdx
     } else if (props._tableData.meta.inputNum === 5) {
@@ -397,9 +396,9 @@ function grouping() {
     // 0 1 カルノー図は左のIndexで配置されるので、
     // 2 3 indexを加算して%4の合計が1だと横、2の倍数だと縦、3だと斜め
     if (idxSum === 1) {
-      helper('rowGrp');
+      helper('rowGrp'); // 横隣接
     } else if ((idxSum % 2) === 0) {
-      helper('colGrp');
+      helper('colGrp'); // 縦隣接
     } else if (idxSum === 3) {
       emit('msg', t('隣り合う図を選択しましょう。'));
       return;
@@ -416,7 +415,7 @@ function deselection() {
   karnaughChildRef.value.forEach(_ => _.deselection());
 }
 
-// 各子カルノー図が求めた4変数未満単位の最小項を使って、完全な最小項を組み合わせを総当りで求める
+// 各子カルノー図が求めた4変数未満単位の最小項を使って、完全な最小項の組み合わせを総当りで求める
 async function autoGrouping() {
   function eqSet(as, bs) {
     if (as.size !== bs.size) return false;
@@ -469,7 +468,6 @@ async function autoGrouping() {
 
   // 組み合わせを計算しやすくするために全組み合わせを1次元の配列にする。例：acc7[X].all[Y] -> [X,all,Y]
   // 組み合わせ数を減らすためにデータをSetに変換して重複排除の枝刈りする
-  const _kms = [];
   const acc7 = range(acc6.length).map((_, idx) => ({ grp: acc6[idx].grp, rowGrp: [], colGrp: [], allGrp: [] }));
   acc7[0].allGrp = allGrp;
   Array.from(new Set(Array.from(new Set([...acc6[0].rowGrp, ...acc6[1].rowGrp].map(_ => Array.from(_).join('@')))).map(_ => _.split('@'))))
