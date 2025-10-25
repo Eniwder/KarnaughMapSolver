@@ -1,5 +1,5 @@
 <template>
-  <hot-table :settings="hotSettings" ref="_hotTable" :key="totalCol"> </hot-table>
+  <hot-table :settings="hotSettings" ref="_hotTable" :key="totalCol" :style="{ width: tableTotalWidth }"> </hot-table>
 </template>
 
 <script setup>
@@ -24,6 +24,8 @@ const props = defineProps({
 });
 const tableData = reactive(props.tableData);
 const totalCol = computed(() => tableData.meta.inputNum + tableData.meta.outputNum);
+// サイズの動的な計算がうまくいかないので、手動で計算してpxで指定
+const tableTotalWidth = computed(() => `${totalCol.value * 50 + 24}px`);
 const cellSetting = computed(() =>
   [...range(totalCol.value).map((n) => ({
     row: 0,
@@ -145,12 +147,6 @@ watch(() => props.tableData, (val) => {
 <style>
 .handsontable tr:nth-of-type(even) td {
   background-color: rgb(243, 243, 255) !important;
-}
-
-/* 変数を増やした場合にうまく幅を調節してくれなかったので強引に修正
-witdh的にはカルノー図に重なる場合があるが悪影響は無さそう。 */
-.handsontable.htColumnHeaders {
-  width: 150% !important;
 }
 </style>
 
