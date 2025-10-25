@@ -7,7 +7,7 @@
           {{ kvi.dimColHeaderLabel.v }} </text>
         <text v-for="v in kvi.dimColHeader" :x="v.x" :y="v.y" text-anchor="middle" dominant-baseline="central"
           fill="black" :font-size="kvi.fontInSize">{{
-      v.v }}</text>
+            v.v }}</text>
       </template>
       <template v-if="tableData.meta.inputNum > 5">
         <line :x1="kvi.padding + 8" :y1="kvi.padding + 8" :x2="offsets[0].x" :y2="offsets[0].y" stroke="black"
@@ -153,6 +153,8 @@ const subTables = computed(() => {
       acc.push(v.filter((_, idx) => idx !== axis));
       return acc;
     }, []));
+    console.log(body[0], body[0].length, tableData.meta.outputNum);
+    // TODO 何やってるか忘れたけど5入力以上、6出力以上の場合はバグるかも？　ただ5入力以上を使う人がほぼいない想定なので一旦放置
     if ((body[0].length - tableData.meta.outputNum) < 6) return bodies;
     else return bodies.flatMap(_ => splitBody2In4(_, axis));
   }
@@ -429,7 +431,7 @@ async function autoGrouping() {
   range(4).forEach((_, idx) => acc6[idx] = { grp: [], rowGrp: [], colGrp: [], allGrp: allGrp });
   _groups.forEach((group, idx) => {
     const rowGrp = getDiff(group.filter(g => canGroups[rowIdxMap[idx]]?.(g)), allGrp || []); // [0,1] [1,0] [2,3] [3,2]
-    const colGrp = getDiff(group.filter(g => canGroups[colIdxMap[idx]]?.(g)), allGrp || []); // [0,2] [1,3] [2,0] [3,1] 
+    const colGrp = getDiff(group.filter(g => canGroups[colIdxMap[idx]]?.(g)), allGrp || []); // [0,2] [1,3] [2,0] [3,1]
     const grp = getDiff(getDiff(getDiff(group, colGrp), rowGrp), allGrp);
     acc6[idx].grp.push(...grp);
     acc6[idx].rowGrp.push(...rowGrp);
