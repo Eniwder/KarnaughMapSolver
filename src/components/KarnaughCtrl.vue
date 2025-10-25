@@ -55,14 +55,14 @@
         <v-btn elevation="2" color="indigo-lighten-4" @click="grouping">{{ $t('囲む解除') }}
         </v-btn>
         <v-btn elevation="2" color="indigo-lighten-4" @click="deselection">{{
-    $t('選択解除')
-  }}</v-btn>
+          $t('選択解除')
+        }}</v-btn>
         <v-btn elevation="2" color="indigo-lighten-4" @click="reset(null)">{{
-    $t('リセット')
-  }}</v-btn>
+          $t('リセット')
+        }}</v-btn>
         <v-btn elevation="2" color="indigo-lighten-4" @click="autoGrouping">{{
-    $t('自動で囲む')
-  }}</v-btn>
+          $t('自動で囲む')
+        }}</v-btn>
       </v-row>
       <v-row v-show="advancedOpt" @keydown="$event.stopPropagation()" class="advanced-opt">
         <v-col cols="3"> <v-text-field type="number" step="any" min="18" max="100" :label="$t('セルのサイズ')"
@@ -360,23 +360,6 @@ function deletedTab(n) {
 
 onMounted(() => {
   selectedTab.value = 0;
-});
-
-// タブを強制的にレンダリングさせる
-// これをしないと出力を子要素を参照できない箇所が出てくる
-// UI的にも奇妙な挙動をするが妥協
-watch(() => props.tables.length, () => {
-  const _selectedTab = selectedTab.value;
-  function render(idx) {
-    idx = (idx % props.tables.length);
-    if (idx === _selectedTab) {
-      selectedTab.value = _selectedTab;
-      return;
-    };
-    selectedTab.value = idx;
-    nextTick(() => render((idx + 1)));
-  }
-  render(_selectedTab + 1);
 });
 </script>
 
