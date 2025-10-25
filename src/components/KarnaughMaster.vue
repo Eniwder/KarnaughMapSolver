@@ -140,7 +140,7 @@ const tableData = computedReactive(() => {
     td.body = replaceArrsElem(td.body, idxs);
     return td;
   }
-  // robust index calculation for all diagrams, especially first
+
   const indices =
     props._tableData.meta.inputNum === 2
       ? [1, 0]
@@ -184,19 +184,39 @@ const subTables = computed(() => {
       body: Array.isArray(tableData.body) ? tableData.body : []
     }];
   } else {
+    // 5入力以上の場合の分割処理
     const headers = Array.isArray(tableData.headers) ? tableData.headers.slice(0, 4) : [];
     const bodies = splitBody2In4(tableData.body, 4);
-    bodies.forEach((_, idx) => {
-      groups[idx] = props._tableData.groups?.[idx] ?? { grp: [], rowGrp: [], colGrp: [], allGrp: [] };
+
+    let reorderedBodies = bodies;
+    let indexMapping = [0, 1, 2, 3]; // デフォルトのインデックス
+
+    if (props._tableData.meta.inputNum === 6) {
+      // 6入力 (4つの図) の場合: [E0F0, E0F1, E1F0, E1F1] -> [E0F0, E1F0, E0F1, E1F1] に並べ替え
+      // bodiesの順序は E0F0, E0F1, E1F0, E1F1 と仮定
+      reorderedBodies = [bodies[0], bodies[2], bodies[1], bodies[3]];
+      indexMapping = [0, 2, 1, 3]; // NewIdx 0, 1, 2, 3 に対応する OldIdx
+    } else if (props._tableData.meta.inputNum === 5) {
+      // 5入力 (2つの図) の場合: bodiesの順序は E0, E1 で、並べ替えは不要。
+      // ただし、groupsの割り当ては idx=0, 1 のみを使用する。
+      reorderedBodies = bodies;
+      indexMapping = [0, 1]; // NewIdx 0, 1 に対応する OldIdx
+    }
+
+    reorderedBodies.forEach((_, newIdx) => {
+      const oldIdx = indexMapping[newIdx];
+      // groups の割り当ては oldIdx から newIdx へ行う
+      groups[newIdx] = props._tableData.groups?.[oldIdx] ?? { grp: [], rowGrp: [], colGrp: [], allGrp: [] };
     });
-    return bodies.map((body, idx) => ({
+
+    return reorderedBodies.map((body, idx) => ({
       body: Array.isArray(body) ? body : [],
       outputNum: tableData.meta?.outputNum ?? 0,
       inputNum: 4,
       headers,
       outName: tableData.outName ?? '',
       outIdx: tableData.outIdx ?? 0,
-      groups: groups[idx] ?? { grp: [], rowGrp: [], colGrp: [], allGrp: [] }
+      groups: groups[idx]
     }));
   }
 });
