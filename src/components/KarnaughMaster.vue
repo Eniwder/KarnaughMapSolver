@@ -202,12 +202,6 @@ const subTables = computed(() => {
       indexMapping = [0, 1]; // NewIdx 0, 1 に対応する OldIdx
     }
 
-    reorderedBodies.forEach((_, newIdx) => {
-      const oldIdx = indexMapping[newIdx];
-      // groups の割り当ては oldIdx から newIdx へ行う
-      groups[newIdx] = props._tableData.groups?.[oldIdx] ?? { grp: [], rowGrp: [], colGrp: [], allGrp: [] };
-    });
-
     return reorderedBodies.map((body, idx) => ({
       body: Array.isArray(body) ? body : [],
       outputNum: tableData.meta?.outputNum ?? 0,
