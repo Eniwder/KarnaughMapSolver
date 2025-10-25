@@ -157,45 +157,46 @@ const tableData = computedReactive(() => {
 const subTables = computed(() => {
   // 4入力以下のテーブルに分割する
   function splitBody2In4(body, axis) {
+    // ガード: bodyが不正なら空配列返す
+    if (!Array.isArray(body) || body.length === 0) return [[]];
+    // ガード: axisが範囲外ならそのまま返す
+    if (axis < 0 || axis >= body[0].length) return [body];
+    // 再帰の深さ制限（無限ループ防止）
+    if (body.length > 1024) return [body];
     const bodies = [0, 1].map(v => body.filter(_ => _[axis] == v)).map(_ => _.reduce((acc, v) => {
       acc.push(v.filter((_, idx) => idx !== axis));
       return acc;
     }, []));
-    console.log(body[0], body[0].length, tableData.meta.outputNum);
-    // TODO 何やってるか忘れたけど5入力以上、6出力以上の場合はバグるかも？　ただ5入力以上を使う人がほぼいない想定なので一旦放置
-    if ((body[0].length - tableData.meta.outputNum) < 6) return bodies;
+    // body[0]が存在しない場合は空配列返す
+    if (!bodies[0] || !Array.isArray(bodies[0])) return [[]];
+    // TODO 何やってるか忘れたけど5入力以上、6出力以上の場合はバグるかも？
+    if ((body[0].length - (tableData.meta?.outputNum ?? 0)) < 6) return bodies;
     else return bodies.flatMap(_ => splitBody2In4(_, axis));
   }
   // groupsはwatchで同期済み
   if (props._tableData.meta.inputNum <= 4) {
     return [{
-      inputNum: tableData.meta.inputNum,
-      headers: tableData.headers,
-      outName: tableData.outName,
-      outIdx: tableData.outIdx,
-      groups: groups[0],
-      body: tableData.body
+      inputNum: tableData.meta?.inputNum ?? 0,
+      headers: Array.isArray(tableData.headers) ? tableData.headers : [],
+      outName: tableData.outName ?? '',
+      outIdx: tableData.outIdx ?? 0,
+      groups: groups[0] ?? { grp: [], rowGrp: [], colGrp: [], allGrp: [] },
+      body: Array.isArray(tableData.body) ? tableData.body : []
     }];
   } else {
-    // const axis = props.viewOpt.ABCD_EF_or_AB_CDEF ? 1 : 4;
-    const headers = tableData.headers.slice(0, 4); // この値は使われないけど一応
+    const headers = Array.isArray(tableData.headers) ? tableData.headers.slice(0, 4) : [];
     const bodies = splitBody2In4(tableData.body, 4);
     bodies.forEach((_, idx) => {
-      groups[idx] = props._tableData.groups[idx] || {
-        grp: [],
-        rowGrp: [],
-        colGrp: [],
-        allGrp: [],
-      };
+      groups[idx] = props._tableData.groups?.[idx] ?? { grp: [], rowGrp: [], colGrp: [], allGrp: [] };
     });
     return bodies.map((body, idx) => ({
-      body,
-      outputNum: tableData.meta.outputNum,
+      body: Array.isArray(body) ? body : [],
+      outputNum: tableData.meta?.outputNum ?? 0,
       inputNum: 4,
       headers,
-      outName: tableData.outName,
-      outIdx: tableData.outIdx,
-      groups: groups[idx]
+      outName: tableData.outName ?? '',
+      outIdx: tableData.outIdx ?? 0,
+      groups: groups[idx] ?? { grp: [], rowGrp: [], colGrp: [], allGrp: [] }
     }));
   }
 });
