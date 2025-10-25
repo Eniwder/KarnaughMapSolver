@@ -26,7 +26,7 @@
     <v-row class="fomulas" :style="{ maxWidth: Math.max(600, svgWidth) + 'px' }">
       <div id="fomula" v-html="mathjax"></div>
       <v-btn class="ma-2" variant="text" icon @click="copy4word">
-        <v-icon>mdi-file-word-outline</v-icon>
+        <v-icon>mdi-content-copy</v-icon>
       </v-btn>
     </v-row>
     <v-overlay v-model="isAutoGrouping" persistent width="auto" class="align-center justify-center">
