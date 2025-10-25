@@ -37,7 +37,7 @@ jobs:
           rm -f package-lock.json
       - name: Setup Pages
         uses: actions/configure-pages@v4
-      - run: npm ci
+      - run: npm install
       - run: npm run build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
