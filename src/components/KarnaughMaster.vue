@@ -130,8 +130,11 @@ const tableData = computedReactive(() => {
   // 入力ラベルの描画順序を変える場合は中のデータ順序を入れ替える
   // 描画ロジックは変更しない
   function replaceTableData(td, idxs) {
-    // robust: handle missing indices and preserve original if not found
-    const replaceArrElem = (arr, idxs) => idxs.map(i => arr[i] !== undefined ? arr[i] : arr[i % arr.length]);
+    const replaceArrElem = (arr, idxs) =>
+      arr.reduce((acc, v, idx) => {
+        acc.push(arr[idxs[idx]] || v);
+        return acc;
+      }, []);
     const replaceArrsElem = (arrs, idxs) => arrs.map((arr) => replaceArrElem(arr, idxs));
     td.headers = replaceArrElem(td.headers, idxs);
     td.body = replaceArrsElem(td.body, idxs);
