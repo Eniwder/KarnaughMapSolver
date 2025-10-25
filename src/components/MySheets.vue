@@ -1,5 +1,5 @@
 <template>
-  <hot-table :settings="hotSettings" ref="_hotTable"> </hot-table>
+  <hot-table :settings="hotSettings" ref="_hotTable" :key="totalCol"> </hot-table>
 </template>
 
 <script setup>
@@ -84,8 +84,6 @@ const customBordersSetting = computed(() =>
   ]
 );
 
-// TODO 入力+出力の数を一定数にした後、他の値に変えるとテーブルが壊れる(今の設定だと13で壊れる)
-// optionの数によって壊れる数が変わる。意味不明だがオプションが多いほど上限が増えるので、適当なオプションをたくさんつけておく
 const hotSettings = reactive({
   licenseKey: 'non-commercial-and-evaluation',
   data: tableData.body,
@@ -140,7 +138,6 @@ watch(() => props.tableData, (val) => {
   Object.assign(tableData, val);
   hotSettings.data = tableData.body;
   hotSettings.colHeaders = tableData.headers;
-  _hotTable.value.hotInstance.loadData(hotSettings);
 });
 
 </script>
