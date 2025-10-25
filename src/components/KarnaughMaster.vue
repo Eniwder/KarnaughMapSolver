@@ -114,7 +114,15 @@ const svgRootRef = ref(null);
 const karnaughChildRef = ref(null);
 const isAutoGrouping = ref(false);
 // subTablesが再計算されるたびにグループが初期化されるのを防ぐ
+// groupsはprops._tableData.groupsを参照し、タブ切り替え時に同期
 const groups = reactive([]);
+watch(() => props._tableData.groups, (newGroups) => {
+  if (!newGroups) return;
+  groups.splice(0, groups.length);
+  newGroups.forEach((g, i) => {
+    groups[i] = g;
+  });
+}, { immediate: true });
 
 const tableData = computedReactive(() => {
   // 入力ラベルの描画順序を変えない場合は何もしない
@@ -122,28 +130,28 @@ const tableData = computedReactive(() => {
   // 入力ラベルの描画順序を変える場合は中のデータ順序を入れ替える
   // 描画ロジックは変更しない
   function replaceTableData(td, idxs) {
-    const replaceArrElem = (arr, idxs) =>
-      arr.reduce((acc, v, idx) => {
-        acc.push(arr[idxs[idx]] || v);
-        return acc;
-      }, []);
-
+    // robust: handle missing indices and preserve original if not found
+    const replaceArrElem = (arr, idxs) => idxs.map(i => arr[i] !== undefined ? arr[i] : arr[i % arr.length]);
     const replaceArrsElem = (arrs, idxs) => arrs.map((arr) => replaceArrElem(arr, idxs));
     td.headers = replaceArrElem(td.headers, idxs);
     td.body = replaceArrsElem(td.body, idxs);
     return td;
   }
-  const indices =
-    props._tableData.meta.inputNum === 2
-      ? [1, 0]
-      : props._tableData.meta.inputNum === 3 && props.viewOpt.A_BC_or_A_BC
-        ? [1, 2, 0]
-        : props._tableData.meta.inputNum === 3 && !props.viewOpt.A_BC_or_A_BC
-          ? [2, 0, 1]
-          : props._tableData.meta.inputNum === 4
-            ? [2, 3, 0, 1]
-            : [2, 3, 0, 1];
-
+  // robust index calculation for all diagrams, especially first
+  let indices;
+  if (props._tableData.meta.inputNum === 2) {
+    indices = props.viewOpt.AB_or_BA ? [1, 0] : [0, 1];
+  } else if (props._tableData.meta.inputNum === 3) {
+    if (props.viewOpt.A_BC_or_A_BC) {
+      indices = [1, 2, 0];
+    } else {
+      indices = [0, 1, 2];
+    }
+  } else if (props._tableData.meta.inputNum === 4) {
+    indices = props.viewOpt.AB_or_BA ? [2, 3, 0, 1] : [0, 1, 2, 3];
+  } else {
+    indices = Array.from({ length: props._tableData.meta.inputNum }, (_, i) => i);
+  }
   return replaceTableData(Object.assign({}, props._tableData), indices);
 });
 const subTables = computed(() => {
@@ -158,9 +166,8 @@ const subTables = computed(() => {
     if ((body[0].length - tableData.meta.outputNum) < 6) return bodies;
     else return bodies.flatMap(_ => splitBody2In4(_, axis));
   }
-  groups.splice(0, groups.length);
+  // groupsはwatchで同期済み
   if (props._tableData.meta.inputNum <= 4) {
-    groups[0] = props._tableData.groups[0];
     return [{
       inputNum: tableData.meta.inputNum,
       headers: tableData.headers,
@@ -173,14 +180,6 @@ const subTables = computed(() => {
     // const axis = props.viewOpt.ABCD_EF_or_AB_CDEF ? 1 : 4;
     const headers = tableData.headers.slice(0, 4); // この値は使われないけど一応
     const bodies = splitBody2In4(tableData.body, 4);
-    bodies.forEach((_, idx) => {
-      groups[idx] = props._tableData.groups[idx] || {
-        grp: [],
-        rowGrp: [],
-        colGrp: [],
-        allGrp: [],
-      };
-    });
     return bodies.map((body, idx) => ({
       body,
       outputNum: tableData.meta.outputNum,

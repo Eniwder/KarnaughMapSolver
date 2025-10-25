@@ -264,7 +264,11 @@ const tabItems = computed(() => {
 });
 
 
-const activeKarnaugh = computed(() => karnaughs.value[selectedTab.value]);
+// タブごとに正しいKarnaughMasterを参照する
+const activeKarnaugh = computed(() => {
+  if (!karnaughs.value || !Array.isArray(karnaughs.value)) return null;
+  return karnaughs.value[selectedTab.value];
+});
 
 const viewOptProps = computed(() => {
   return Object.entries(viewOpt).reduce((acc, [k, v]) => {
@@ -315,6 +319,12 @@ async function autoGrouping() {
 }
 
 function save(ext) {
+  // 保存時に現在のタブのtableData/groupsを反映
+  if (!activeKarnaugh.value) return;
+  // groups情報をprops.tables[selectedTab.value]に保存
+  if (activeKarnaugh.value.groups) {
+    props.tables[selectedTab.value].groups = JSON.parse(JSON.stringify(activeKarnaugh.value.groups));
+  }
   activeKarnaugh.value.save(ext);
   msg.value = t(`図をダウンロードしました。`);
 }
