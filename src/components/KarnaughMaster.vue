@@ -138,20 +138,17 @@ const tableData = computedReactive(() => {
     return td;
   }
   // robust index calculation for all diagrams, especially first
-  let indices;
-  if (props._tableData.meta.inputNum === 2) {
-    indices = props.viewOpt.AB_or_BA ? [1, 0] : [0, 1];
-  } else if (props._tableData.meta.inputNum === 3) {
-    if (props.viewOpt.A_BC_or_A_BC) {
-      indices = [1, 2, 0];
-    } else {
-      indices = [0, 1, 2];
-    }
-  } else if (props._tableData.meta.inputNum === 4) {
-    indices = props.viewOpt.AB_or_BA ? [2, 3, 0, 1] : [0, 1, 2, 3];
-  } else {
-    indices = Array.from({ length: props._tableData.meta.inputNum }, (_, i) => i);
-  }
+  const indices =
+    props._tableData.meta.inputNum === 2
+      ? [1, 0]
+      : props._tableData.meta.inputNum === 3 && props.viewOpt.A_BC_or_A_BC
+        ? [1, 2, 0]
+        : props._tableData.meta.inputNum === 3 && !props.viewOpt.A_BC_or_A_BC
+          ? [2, 0, 1]
+          : props._tableData.meta.inputNum === 4
+            ? [2, 3, 0, 1]
+            : [2, 3, 0, 1];
+
   return replaceTableData(Object.assign({}, props._tableData), indices);
 });
 const subTables = computed(() => {
@@ -180,6 +177,14 @@ const subTables = computed(() => {
     // const axis = props.viewOpt.ABCD_EF_or_AB_CDEF ? 1 : 4;
     const headers = tableData.headers.slice(0, 4); // この値は使われないけど一応
     const bodies = splitBody2In4(tableData.body, 4);
+    bodies.forEach((_, idx) => {
+      groups[idx] = props._tableData.groups[idx] || {
+        grp: [],
+        rowGrp: [],
+        colGrp: [],
+        allGrp: [],
+      };
+    });
     return bodies.map((body, idx) => ({
       body,
       outputNum: tableData.meta.outputNum,
