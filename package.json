@@ -8,10 +8,10 @@
   },
   "main": "background.js",
   "dependencies": {
-    "@handsontable/vue3": "^16.1.1",
+    "@handsontable/vue3": "^15.3.0",
     "@mdi/font": "^7.4.47",
     "file-saver": "^2.0.5",
-    "handsontable": "^16.1.1",
+    "handsontable": "^15.3.0",
     "vue": "^3.5.22",
     "vue-i18n": "^11.1.12",
     "vuetify": "^3.10.7"
