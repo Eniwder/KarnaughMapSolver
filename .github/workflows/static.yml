@@ -22,7 +22,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
     environment:
       name: github-pages
@@ -32,34 +31,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        # 安定版のNode.js環境をセットアップ (npm install前に必須)
+      - name: Setup Node and pnpm 🚀
+        # Node.jsとpnpmを同時にセットアップ
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          # 🔽 pnpm を有効にする 🔽
+          cache: 'pnpm' 
           
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        id: npm-cache
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+      # pnpm は依存関係をグローバルにキャッシュするため、actions/cache ステップは不要になることが多いですが、
+      # 確実性を高めるために残しても問題ありません (この例では削除します)。
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install Dependencies with pnpm
+        # `pnpm install` は `npm ci` と同様にクリーンなインストールを提供し、
+        # ネイティブモジュールに対する処理が優れています。
+        run: pnpm install 
 
-      - name: Build
-        run: npm run build
+      - name: Build with pnpm
+        # ビルドコマンドも pnpm を通して実行
+        run: pnpm run build
 
       - name: Setup Pages
+        # configure-pages はビルド後の適切な位置に置きます
         uses: actions/configure-pages@v4
-
+        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
           path: './dist'
 
       - name: Deploy to GitHub Pages
